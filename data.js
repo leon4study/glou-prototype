@@ -26,9 +26,13 @@ const GLOU_DATA = {
     { id: "cn", ko: "중국", en: "China", flag: "🇨🇳", race: "east_asian" }
   ],
   regions: [
-    { id: "seoul_mapo", ko: "서울 마포(연남·홍대)" }, { id: "seoul_sdm", ko: "서울 서대문(신촌)" },
-    { id: "seoul_gn", ko: "서울 강남" }, { id: "seoul_seongsu", ko: "서울 성수" },
-    { id: "busan", ko: "부산" }, { id: "jeonju", ko: "전주" }, { id: "online", ko: "온라인/전국" }
+    { id: "seoul_mapo", ko: "서울 마포(연남·홍대)", lat: 37.5563, lng: 126.9236 },
+    { id: "seoul_sdm", ko: "서울 서대문(신촌)", lat: 37.5559, lng: 126.9368 },
+    { id: "seoul_gn", ko: "서울 강남", lat: 37.4979, lng: 127.0276 },
+    { id: "seoul_seongsu", ko: "서울 성수", lat: 37.5445, lng: 127.0559 },
+    { id: "busan", ko: "부산", lat: 35.158, lng: 129.060 },
+    { id: "jeonju", ko: "전주", lat: 35.8242, lng: 127.148 },
+    { id: "online", ko: "온라인/전국" }
   ],
   places: [
     // ---- 식당·카페 (장소) ----

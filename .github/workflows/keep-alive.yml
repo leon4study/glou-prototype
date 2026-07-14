@@ -1,0 +1,27 @@
+name: Supabase keep-alive
+
+# 무료 Supabase는 7일 미사용 시 프로젝트가 pause 됨 → 주 1회 핑으로 방지.
+# Supabase 프로젝트를 만든 뒤, repo Settings → Secrets → Actions 에
+#   SUPABASE_URL, SUPABASE_ANON_KEY 를 넣으면 자동으로 동작함.
+# (아직 미설정이면 아래 job은 그냥 skip 됨 — 실패 아님)
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"   # 매주 월요일 00:00 UTC
+  workflow_dispatch:        # 수동 실행도 가능
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST (skip if not configured)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "SUPABASE_URL 미설정 → keep-alive skip (Supabase 만든 뒤 secret 추가)"
+            exit 0
+          fi
+          code=$(curl -sS -o /dev/null -w "%{http_code}" "$SUPABASE_URL/rest/v1/" -H "apikey: $SUPABASE_ANON_KEY")
+          echo "Supabase 응답: $code"

@@ -27,7 +27,7 @@ const state = {
   votes: {}, voted: new Set(), translated: new Set(),
   app: "reviews", ambRegion: "all", likedPosts: new Set(),
   selectedPlace: null, page: null, theme: "yelp",
-  loggedIn: false, nick: "", modal: null
+  loggedIn: false, nick: "", modal: null, pendingModal: null
 };
 
 function setProfile(country) {
@@ -381,7 +381,12 @@ function bindModal() {
   on("logout", "click", () => { state.loggedIn = false; state.nick = ""; state.modal = null; render(); });
   on("loginSubmit", "click", () => {
     const nick = (document.getElementById("li-nick").value || "").trim() || "You";
-    state.loggedIn = true; state.nick = nick; state.modal = null; setProfile(document.getElementById("li-country").value);
+    const country = document.getElementById("li-country").value, c = byId(D.countries, country);
+    state.loggedIn = true; state.nick = nick;
+    state.profileCountry = country; state.countryFilter = country;
+    if (c) { state.profileRace = c.race; state.raceFilter = c.race; }
+    state.modal = state.pendingModal || null; state.pendingModal = null; // 로그인 후 하려던 동작(리뷰/콘텐츠)으로 바로 이어감
+    render();
   });
   on("rvCancel", "click", () => { state.modal = null; render(); });
   on("rvSubmit", "click", () => {
@@ -424,8 +429,9 @@ function AmbassadorApp() {
     ${AmbRank()}${AmbFeed()}</div>`;
 }
 function AmbRank() {
-  const regionOpts = `<option value="all">전체 지역</option>` + D.regions.filter(r => r.id !== "online").map(r => `<option value="${r.id}" ${state.ambRegion === r.id ? "selected" : ""}>${r.ko}</option>`).join("");
+  const regionOpts = `<option value="all">🌍 전체 (전국 랭킹)</option>` + D.regions.filter(r => r.id !== "online" && r.lat).map(r => `<option value="${r.id}" ${state.ambRegion === r.id ? "selected" : ""}>${r.ko}</option>`).join("");
   const rank = rankings(state.ambRegion), medal = i => ["🥇", "🥈", "🥉"][i] || (i + 1);
+  const scope = state.ambRegion === "all" ? "전국" : (byId(D.regions, state.ambRegion) ? byId(D.regions, state.ambRegion).ko : "");
   const rows = rank.map((a, i) => {
     const c = byId(D.countries, a.country), rg = byId(D.regions, a.region);
     return `<div class="rank-row"><span class="rk">${medal(i)}</span>
@@ -434,8 +440,10 @@ function AmbRank() {
       <span class="rk-stats">게시물 ${a.posts} · ❤️ ${a.likes} · 팔로워 ${a.followers.toLocaleString()}</span>
       <span class="rk-score">${a.score}</span></div>`;
   }).join("");
-  return `<section class="rank"><div class="rank-head"><h2>🏆 지역별 앰배서더 랭킹</h2>
+  return `<section class="rank"><div class="rank-head"><h2>🏆 ${scope} 앰배서더 랭킹</h2>
       <select id="ambRegion">${regionOpts}</select></div>
+    <div class="map-note">🗺️ 지역 핀(숫자=앰배서더 수) 클릭 → 그 지역 랭킹. 시·구 단위.</div>
+    <div id="amb-map" class="amb-map"></div>
     <div class="rank-list">${rows || `<p class="empty">이 지역 앰배서더가 아직 없어요.</p>`}</div></section>`;
 }
 function AmbFeed() {
@@ -458,16 +466,17 @@ function AmbFeed() {
 function bindAmbassador() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
   on("ambRegion", "change", e => { state.ambRegion = e.target.value; render(); });
-  on("newPost", "click", () => { state.modal = state.loggedIn ? "post" : "login"; render(); });
+  on("newPost", "click", () => { if (state.loggedIn) state.modal = "post"; else { state.pendingModal = "post"; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
+  initAmbMap();
 }
 function render() {
   document.documentElement.dataset.theme = state.theme;
   document.getElementById("app").innerHTML = TopNav() +
     (state.app === "ambassadors"
       ? AmbassadorApp()
-      : Header() + SearchBar() + ProfileBar() + CategoryPills() + `<div id="results"></div>`)
+      : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
     + Modal();
   bindTop(); bindModal();
   if (state.app === "ambassadors") bindAmbassador();
@@ -501,6 +510,21 @@ function initMaps() {
     tiles().addTo(m); L.marker([p.lat, p.lng], { icon: icon(p) }).addTo(m).bindTooltip(p.name).openTooltip();
   }
 }
+function initAmbMap() {
+  if (typeof L === "undefined") return;
+  const el = document.getElementById("amb-map"); if (!el) return;
+  const m = L.map(el, { scrollWheelZoom: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
+  const pts = [];
+  D.regions.filter(r => r.lat).forEach(r => {
+    const rk = rankings(r.id), top = rk[0];
+    const label = `<b>${r.ko}</b><br>${top ? "🥇 " + esc(top.nick) + " · " + rk.length + "명" : "앰배서더 없음"}`;
+    const icon = L.divIcon({ html: `<div class="rpin ${state.ambRegion === r.id ? "on" : ""}">${rk.length}</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
+    L.marker([r.lat, r.lng], { icon }).addTo(m).bindTooltip(label).on("click", () => { state.ambRegion = r.id; render(); });
+    pts.push([r.lat, r.lng]);
+  });
+  if (pts.length) m.fitBounds(pts, { padding: [40, 40], maxZoom: 11 });
+}
 
 /* ---------- 바인딩 ---------- */
 function bindControls() {
@@ -532,7 +556,7 @@ function bindResults() {
   on("grpOnly", "click", () => { state.showAll = false; renderResults(); });
   on("allRv", "click", () => { state.showAll = true; renderResults(); });
   on("reviewSort", "change", e => { state.reviewSort = e.target.value; renderResults(); });
-  on("writeReview", "click", () => { state.modal = state.loggedIn ? "review" : "login"; render(); });
+  on("writeReview", "click", () => { if (state.loggedIn) state.modal = "review"; else { state.pendingModal = "review"; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-chip]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.chip; state.quick[k] = !state.quick[k]; renderResults(); }));
   document.querySelectorAll("[data-savedonly]").forEach(b => b.addEventListener("click", () => { state.savedOnly = !state.savedOnly; renderResults(); }));
   document.querySelectorAll("[data-trans]").forEach(b => b.addEventListener("click", () => {
