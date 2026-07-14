@@ -413,11 +413,23 @@ function bindModal() {
     state.modal = null; render();
   });
 }
-function rankings(region) {
-  const map = {};
-  D.ambassadors.forEach(a => { if (region === "all" || a.region === region) map[a.nick] = { nick: a.nick, country: a.country, region: a.region, followers: a.followers, posts: 0, likes: 0 }; });
+function regionsInScope(scope) {
+  if (scope === "all") return D.regions.filter(r => r.lat).map(r => r.id);
+  const prov = (D.provinces || []).find(p => p.id === scope);
+  return prov ? prov.regions : [scope];
+}
+function provinceOf(scope) {
+  if (scope === "all") return null;
+  const prov = (D.provinces || []).find(p => p.id === scope);
+  if (prov) return prov;
+  const r = byId(D.regions, scope);
+  return r ? (D.provinces || []).find(p => p.id === r.province) : null;
+}
+function rankings(scope) {
+  const ids = regionsInScope(scope), inScope = id => ids.includes(id), map = {};
+  D.ambassadors.forEach(a => { if (inScope(a.region)) map[a.nick] = { nick: a.nick, country: a.country, region: a.region, followers: a.followers, posts: 0, likes: 0 }; });
   D.posts.forEach(p => {
-    if (region !== "all" && p.region !== region) return;
+    if (!inScope(p.region)) return;
     if (!map[p.authorNick]) map[p.authorNick] = { nick: p.authorNick, country: p.country, region: p.region, followers: 0, posts: 0, likes: 0 };
     map[p.authorNick].posts++; map[p.authorNick].likes += p.likes + (state.likedPosts.has(p.id) ? 1 : 0);
   });
@@ -429,9 +441,14 @@ function AmbassadorApp() {
     ${AmbRank()}${AmbFeed()}</div>`;
 }
 function AmbRank() {
-  const regionOpts = `<option value="all">🌍 전체 (전국 랭킹)</option>` + D.regions.filter(r => r.id !== "online" && r.lat).map(r => `<option value="${r.id}" ${state.ambRegion === r.id ? "selected" : ""}>${r.ko}</option>`).join("");
+  const opts = [`<option value="all" ${state.ambRegion === "all" ? "selected" : ""}>🌍 전체 (전국)</option>`];
+  (D.provinces || []).forEach(pr => {
+    opts.push(`<option value="${pr.id}" ${state.ambRegion === pr.id ? "selected" : ""}>📍 ${pr.ko}</option>`);
+    D.regions.filter(r => r.province === pr.id && r.lat).forEach(r => opts.push(`<option value="${r.id}" ${state.ambRegion === r.id ? "selected" : ""}>　└ ${r.ko}</option>`));
+  });
   const rank = rankings(state.ambRegion), medal = i => ["🥇", "🥈", "🥉"][i] || (i + 1);
-  const scope = state.ambRegion === "all" ? "전국" : (byId(D.regions, state.ambRegion) ? byId(D.regions, state.ambRegion).ko : "");
+  const prov = provinceOf(state.ambRegion), rgSel = byId(D.regions, state.ambRegion);
+  const scope = state.ambRegion === "all" ? "전국" : (rgSel ? rgSel.ko : (prov ? prov.ko : ""));
   const rows = rank.map((a, i) => {
     const c = byId(D.countries, a.country), rg = byId(D.regions, a.region);
     return `<div class="rank-row"><span class="rk">${medal(i)}</span>
@@ -440,9 +457,11 @@ function AmbRank() {
       <span class="rk-stats">게시물 ${a.posts} · ❤️ ${a.likes} · 팔로워 ${a.followers.toLocaleString()}</span>
       <span class="rk-score">${a.score}</span></div>`;
   }).join("");
+  const back = state.ambRegion !== "all" ? `<button class="rank-back" id="ambBack">← 전국(도 단위)</button>` : "";
+  const note = prov ? `${prov.ko} — 시·구 단위 (핀 클릭 → 그 지역 랭킹)` : "도 단위 (핀 클릭 → 시·구로 확대)";
   return `<section class="rank"><div class="rank-head"><h2>🏆 ${scope} 앰배서더 랭킹</h2>
-      <select id="ambRegion">${regionOpts}</select></div>
-    <div class="map-note">🗺️ 지역 핀(숫자=앰배서더 수) 클릭 → 그 지역 랭킹. 시·구 단위.</div>
+      <select id="ambRegion">${opts.join("")}</select></div>
+    <div class="map-note">🗺️ ${note} ${back}</div>
     <div id="amb-map" class="amb-map"></div>
     <div class="rank-list">${rows || `<p class="empty">이 지역 앰배서더가 아직 없어요.</p>`}</div></section>`;
 }
@@ -466,6 +485,7 @@ function AmbFeed() {
 function bindAmbassador() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
   on("ambRegion", "change", e => { state.ambRegion = e.target.value; render(); });
+  on("ambBack", "click", () => { state.ambRegion = "all"; render(); });
   on("newPost", "click", () => { if (state.loggedIn) state.modal = "post"; else { state.pendingModal = "post"; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
@@ -515,15 +535,26 @@ function initAmbMap() {
   const el = document.getElementById("amb-map"); if (!el) return;
   const m = L.map(el, { scrollWheelZoom: false });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
-  const pts = [];
-  D.regions.filter(r => r.lat).forEach(r => {
-    const rk = rankings(r.id), top = rk[0];
-    const label = `<b>${r.ko}</b><br>${top ? "🥇 " + esc(top.nick) + " · " + rk.length + "명" : "앰배서더 없음"}`;
-    const icon = L.divIcon({ html: `<div class="rpin ${state.ambRegion === r.id ? "on" : ""}">${rk.length}</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
-    L.marker([r.lat, r.lng], { icon }).addTo(m).bindTooltip(label).on("click", () => { state.ambRegion = r.id; render(); });
-    pts.push([r.lat, r.lng]);
-  });
-  if (pts.length) m.fitBounds(pts, { padding: [40, 40], maxZoom: 11 });
+  const pts = [], prov = provinceOf(state.ambRegion);
+  if (!prov) {
+    // 1단계: 도/광역시 핀 (클릭 → 그 도로 확대)
+    (D.provinces || []).forEach(pr => {
+      const n = rankings(pr.id).length;
+      const icon = L.divIcon({ html: `<div class="rpin big">${n}</div>`, className: "", iconSize: [42, 42], iconAnchor: [21, 21] });
+      L.marker([pr.lat, pr.lng], { icon }).addTo(m).bindTooltip(`<b>${pr.ko}</b><br>앰배서더 ${n}명 · 클릭해 확대`).on("click", () => { state.ambRegion = pr.id; render(); });
+      pts.push([pr.lat, pr.lng]);
+    });
+    pts.length ? m.fitBounds(pts, { padding: [50, 50], maxZoom: 8 }) : m.setView([36.5, 127.8], 7);
+  } else {
+    // 2단계: 그 도의 시·구 핀
+    D.regions.filter(r => r.province === prov.id && r.lat).forEach(r => {
+      const rk = rankings(r.id), top = rk[0], sel = state.ambRegion === r.id;
+      const icon = L.divIcon({ html: `<div class="rpin ${sel ? "on" : ""}">${rk.length}</div>`, className: "", iconSize: [34, 34], iconAnchor: [17, 17] });
+      L.marker([r.lat, r.lng], { icon }).addTo(m).bindTooltip(`<b>${r.ko}</b><br>${top ? "🥇 " + esc(top.nick) + " · " + rk.length + "명" : "앰배서더 없음"}`).on("click", () => { state.ambRegion = r.id; render(); });
+      pts.push([r.lat, r.lng]);
+    });
+    pts.length ? m.fitBounds(pts, { padding: [60, 60], maxZoom: 13 }) : m.setView([prov.lat, prov.lng], 11);
+  }
 }
 
 /* ---------- 바인딩 ---------- */
