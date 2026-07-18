@@ -132,7 +132,65 @@ body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", Prete
   .mappane { flex: none; width: 100%; position: static; }
   .hero-thumb { flex-basis: 72px; height: 72px; font-size: 34px; }
   .detail-cols { flex-direction: column; }
-  .detail-map { width: 100%; }
+  .detail-map { width: 100%; flex: none; }
+  .product-info { flex: none; width: 100%; }
+}
+
+/* phone */
+@media (max-width: 560px) {
+  html, body { overflow-x: hidden; }
+  #app { padding: 12px 12px 40px; }
+
+  /* 상단 네비 */
+  .topnav { gap: 8px; flex-wrap: wrap; }
+  .tn-brand { font-size: 18px; }
+  .tn-tab { padding: 6px 12px; font-size: 13px; }
+  .topnav .login-btn { margin-left: auto; }
+
+  /* 히어로 헤더: 데모용 팔레트 스위치는 모바일에서 숨김 */
+  .hdr-row { flex-wrap: wrap; gap: 6px 8px; }
+  .brand { font-size: 22px; }
+  .theme-sw { display: none; }
+  .tag { font-size: 12px; }
+
+  /* 지도가 페이지 가로스크롤 유발하지 않도록 */
+  .leaflet-map, .amb-map, .map-canvas, .dmap { max-width: 100%; }
+
+  /* 검색바 세로 적층 */
+  .searchbar { flex-direction: column; }
+  .searchbar .s-what { padding: 12px 14px; font-size: 16px; }
+  .searchbar .s-where { border-left: none; border-top: 1px solid var(--line); width: 100%; text-align: left; padding: 11px 14px; }
+  .searchbar .s-go { padding: 12px; width: 100%; }
+
+  /* 프로필/필터: 셀렉트가 폭을 나눠 갖고 넘치지 않게 */
+  .profile { gap: 6px 8px; }
+  .profile select { flex: 1 1 40%; min-width: 0; }
+  .filters { gap: 8px; }
+  .filters .toggle { margin-left: 0; }
+  .grp { flex: 1 1 auto; }
+  .grp select { flex: 1; min-width: 0; }
+
+  /* 카드 */
+  .thumb { flex-basis: 56px; height: 56px; font-size: 26px; }
+  .name { font-size: 15px; }
+  .meta, .ext { font-size: 12px; }
+
+  /* 상세 */
+  .hero-info h2 { font-size: 20px; }
+  .actions { flex-wrap: wrap; }
+  .breakdown .bd-label { flex: 0 0 76px; width: 76px; }
+  .breakdown .bd-val { flex: 0 0 58px; width: 58px; }
+  .biz-row.menu li { max-width: none; }
+
+  /* 앰배서더 */
+  .amb-hero { padding: 14px; }
+  .amb-hero h1 { font-size: 19px; }
+  .rank-head { flex-wrap: wrap; gap: 6px; }
+  .rk-name { font-size: 13px; }
+  .amb-map { height: 240px; }
+
+  /* 모달 풀폭 */
+  .modal { max-width: 100%; }
 }
 
 /* header right + login */
