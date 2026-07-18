@@ -606,4 +606,14 @@ function bindResults() {
   }));
 }
 
+// 딥링크 / 스크린샷용 초기 화면: ?app=ambassadors · ?place=p1 · ?cat=cosmetics · ?race=black
+(function () {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get("app") === "ambassadors") state.app = "ambassadors";
+    if (q.get("cat") && catOf(q.get("cat"))) state.category = q.get("cat");
+    if (q.get("race")) { state.profileRace = q.get("race"); state.raceFilter = q.get("race"); }
+    if (q.get("place") && byId(D.places, q.get("place"))) state.selectedPlace = q.get("place");
+  } catch (e) { }
+})();
 render();
