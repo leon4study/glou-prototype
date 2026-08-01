@@ -22,13 +22,16 @@ const state = {
   category: "restaurant", region: "all", search: "", sort: "rating",
   countryFilter: "us", raceFilter: "white",
   quick: { kr: false, english: false, noPhone: false, solo: false },
-  savedOnly: false, saved: new Set(),
+  savedOnly: false, saved: new Set(["p8"]),
   userLoc: null, showAll: false, reviewSort: "recent",
   votes: {}, voted: new Set(), translated: new Set(),
   app: "reviews", ambRegion: "all", likedPosts: new Set(),
   selectedPost: null, commFilter: "all",
-  selectedPlace: null, page: null, theme: "yelp",
-  loggedIn: false, nick: "", modal: null, pendingModal: null
+  likedShorts: new Set(), savedShorts: new Set(), focusShort: null,
+  selectedPlace: null, page: null, theme: "ohou",
+  loggedIn: false, nick: "", modal: null, pendingModal: null,
+  compose: null, pendingCompose: false,
+  myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false
 };
 
 function setProfile(country) {
@@ -94,21 +97,18 @@ function Badges(p) {
   return `<div class="badges">${b.join("")}</div>`;
 }
 function TopNav() {
-  const tabs = [["reviews", "📝 리뷰"], ["community", "💬 커뮤니티"], ["ambassadors", "🌟 앰배서더"]];
+  const tabs = [["reviews", "📝 리뷰"], ["community", "💬 커뮤니티"], ["shorts", "🎬 쇼츠"], ["ambassadors", "🌟 앰배서더"]];
+  const themes = [["ohou", "오늘의집"], ["yelp", "Yelp"], ["slim", "슬림"]];
+  const sw = themes.map(([id, l]) => `<button class="theme-btn ${state.theme === id ? "on" : ""}" data-theme-btn="${id}">${l}</button>`).join("");
   return `<nav class="topnav">
-      <div class="tn-brand">GL<span>OU</span></div>
+      <div class="tn-brand" id="navHome" title="홈으로">GL<span>OU</span></div>
       <div class="tn-tabs">${tabs.map(([id, l]) => `<button class="tn-tab ${state.app === id ? "on" : ""}" data-app="${id}">${l}</button>`).join("")}</div>
-      <button id="loginBtn" class="login-btn">${state.loggedIn ? "👤 " + esc(state.nick) : "🔑 로그인"}</button>
+      <div class="theme-sw" title="디자인 프리셋">${sw}</div>
+      ${state.app === "shorts" ? "" : `<button id="loginBtn" class="login-btn">${state.loggedIn ? "👤 " + esc(state.nick) : "🔑 로그인"}</button>`}
     </nav>`;
 }
 function Header() {
-  const themes = [["yelp", "Red"], ["blue", "Blue"], ["coral", "Coral"]];
-  const sw = themes.map(([id, l]) => `<button class="theme-btn ${state.theme === id ? "on" : ""}" data-theme-btn="${id}">${l}</button>`).join("");
-  return `<header class="hdr"><div class="hdr-row">
-      <button class="brand" id="home" title="홈으로">GL<span>OU</span></button>
-      <div class="hdr-right">
-        <div class="theme-sw" title="색상(조정용)">${sw}</div></div></div>
-      <p class="tag">내 주변 <b>한국인 맛집·로컬 스팟</b>을 내 국가·인종 리뷰로. 지방까지.</p></header>`;
+  return `<header class="hdr"><p class="tag">내 주변 <b>한국인 맛집·로컬 스팟</b>을 내 국가·인종 리뷰로. 지방까지.</p></header>`;
 }
 function SearchBar() {
   const regionOpts = `<option value="all">📍 내 주변(전체)</option>` +
@@ -264,7 +264,7 @@ function Detail(p) {
     const t = state.translated.has(r.id);
     return `<div class="review"><div class="avatar">${(r.nick[0] || "?").toUpperCase()}</div>
         <div class="rv-main"><div class="rv-top"><b>${esc(r.nick)}</b> <span class="rv-tag">${c ? c.flag + c.ko : r.country} · ${race ? race.ko : ""}</span>
-          <span class="rv-star">${stars(r.rating)}</span></div><p class="rv-body">${esc(r.body)}</p>
+          <span class="rv-star">${stars(r.rating)}</span></div><p class="rv-body">${esc(r.body)}</p>${r.tags && r.tags.length ? `<div class="rv-tags">${r.tags.map(t => `<span class="rv-tag-chip">#${esc(t)}</span>`).join("")}</div>` : ""}
           ${r.photo ? `<img class="rv-photo" src="${r.photo}" alt="review photo">` : ""}
           ${r.trans ? `${t ? `<p class="trans">↳ ${esc(r.trans)}</p>` : ""}<button class="trans-btn" data-trans="${r.id}">${t ? "원문 보기" : "🌐 번역 보기"}</button>` : ""}
           <button class="vote ${state.voted.has(r.id) ? "on" : ""}" data-vote="${r.id}">👍 유용해요 ${vc || ""}</button></div></div>`;
@@ -306,43 +306,79 @@ function Detail(p) {
       <div class="reviews">${list || `<p class="empty">이 그룹의 리뷰가 아직 없어요. 🌐전체를 눌러보세요.</p>`}</div>
     </section>`;
 }
+function myContentGrid(nick) {
+  if (state.demoEmpty && nick === "You") return `<p class="empty">아직 올린 게시물이 없어요.</p>`;
+  const items = D.posts.filter(p => p.authorNick === nick).map(p => ({ t: "post", id: p.id, e: p.thumb, likes: p.likes }))
+    .concat(D.shorts.filter(s => s.authorNick === nick).map(s => ({ t: "short", id: s.id, e: s.emoji, likes: s.likes })));
+  if (!items.length) return `<p class="empty">아직 올린 게시물이 없어요.</p>`;
+  return `<div class="pg-grid">${items.map(it => `<button class="pg-cell" data-pg="${it.t}:${it.id}"><span class="pg-emoji">${it.e}</span>${it.t === "short" ? `<span class="pg-badge">🎬</span>` : ""}<span class="pg-likes">❤️ ${it.likes.toLocaleString()}</span></button>`).join("")}</div>`;
+}
+function openPgItem(pg) {
+  const idx = pg.indexOf(":"), t = pg.slice(0, idx), id = pg.slice(idx + 1);
+  state.profileNick = null; state.page = null;
+  if (t === "post") { state.app = "community"; state.selectedPost = id; }
+  else { state.app = "shorts"; state.focusShort = id; }
+  render();
+}
+function InfluencerProfile() {
+  const nick = state.profileNick;
+  const a = D.ambassadors.find(x => x.nick === nick) || {};
+  const anyPost = D.posts.find(p => p.authorNick === nick);
+  const c = byId(D.countries, a.country || (anyPost && anyPost.country));
+  const rg = byId(D.regions, a.region);
+  const myPosts = D.posts.filter(p => p.authorNick === nick), myShorts = D.shorts.filter(s => s.authorNick === nick);
+  const likes = myPosts.reduce((s, p) => s + p.likes, 0) + myShorts.reduce((s, x) => s + x.likes, 0);
+  return `<div class="composer profile-ov">
+    <header class="cz-bar"><button class="cz-cancel" id="profBack">← 뒤로</button><span class="cz-title">${esc(nick)}</span><span style="width:40px"></span></header>
+    <div class="cz-body">
+      <div class="prof-head">
+        <div class="prof-avatar">${nick[0].toUpperCase()}</div>
+        <div class="prof-id"><h2>${esc(nick)}</h2><div class="prof-meta">${c ? c.flag + c.ko : ""}${rg ? " · " + rg.ko : ""}</div>
+          <div class="prof-stats"><b>${myPosts.length + myShorts.length}</b> 게시물 · ❤️ <b>${likes.toLocaleString()}</b>${a.followers ? ` · 팔로워 <b>${a.followers.toLocaleString()}</b>` : ""}</div></div>
+      </div>
+      ${myContentGrid(nick)}
+    </div>
+  </div>`;
+}
+function bindProfile() {
+  const back = document.getElementById("profBack"); if (back) back.addEventListener("click", () => { state.profileNick = null; render(); });
+  document.querySelectorAll(".profile-ov [data-pg]").forEach(b => b.addEventListener("click", () => openPgItem(b.dataset.pg)));
+}
 function MyPage() {
   const c = byId(D.countries, state.profileCountry), race = byId(D.races, state.profileRace);
+  const nick = state.loggedIn ? (state.nick || "You") : "Guest";
   const savedPlaces = D.places.filter(p => state.saved.has(p.id));
   const myReviews = D.reviews.filter(r => String(r.id).startsWith("u"));
-  const savedHtml = savedPlaces.length ? savedPlaces.map(Card).join("")
-    : `<p class="empty">저장한 곳이 없어요. 카드의 🤍를 눌러 저장하세요.</p>`;
-  const revHtml = myReviews.length ? myReviews.map(r => {
-    const p = byId(D.places, r.place);
-    return `<div class="my-review" data-place="${r.place}"><div class="rv-top"><b>${p ? p.name : ""}</b>
-        <span class="rv-star">${stars(r.rating)}</span></div><p>${esc(r.body)}</p></div>`;
-  }).join("") : `<p class="empty">아직 쓴 리뷰가 없어요. 장소 상세에서 ✍️ 리뷰 쓰기로 남겨보세요.</p>`;
+  const nPosts = D.posts.filter(p => p.authorNick === nick).length + D.shorts.filter(s => s.authorNick === nick).length;
+  const tab = state.myTab || "posts";
+  const tabbar = [["posts", `게시물 ${nPosts}`], ["reviews", `리뷰 ${myReviews.length}`], ["saved", `저장 ${savedPlaces.length}`]]
+    .map(([k, l]) => `<button class="mp-tab ${tab === k ? "on" : ""}" data-mytab="${k}">${l}</button>`).join("");
+  let body;
+  if (tab === "reviews") body = myReviews.length ? `<section class="list">${myReviews.map(r => { const p = byId(D.places, r.place); return `<div class="my-review" data-place="${r.place}"><div class="rv-top"><b>${p ? p.name : ""}</b><span class="rv-star">${stars(r.rating)}</span></div><p>${esc(r.body)}</p>${r.tags && r.tags.length ? `<div class="rv-tags">${r.tags.map(t => `<span class="rv-tag-chip">#${esc(t)}</span>`).join("")}</div>` : ""}</div>`; }).join("")}</section>` : `<p class="empty">아직 쓴 리뷰가 없어요. 장소 상세에서 ✍️ 리뷰 쓰기로 남겨보세요.</p>`;
+  else if (tab === "saved") body = savedPlaces.length ? `<section class="list">${savedPlaces.map(Card).join("")}</section>` : `<p class="empty">저장한 곳이 없어요. 카드의 🤍를 눌러 저장하세요.</p>`;
+  else body = myContentGrid(nick);
   return `<button class="back" id="backHome">← 홈으로</button>
     <section class="mypage">
       <div class="mp-head">
-        <div class="mp-avatar">${state.loggedIn ? (state.nick[0] || "U").toUpperCase() : "👤"}</div>
-        <div class="mp-id"><h2>${state.loggedIn ? esc(state.nick) : "Guest"}</h2>
+        <div class="mp-avatar">${state.loggedIn ? (nick[0] || "U").toUpperCase() : "👤"}</div>
+        <div class="mp-id"><h2>${esc(nick)}</h2>
           <div class="meta">${c.flag}${c.ko} · ${race.ko} · ${state.loggedIn ? "로그인됨" : "비로그인"}</div></div>
         <div class="mp-actions">${state.loggedIn
           ? `<button class="btn-ghost" id="editProfile">프로필 수정</button><button class="btn-ghost" id="logout2">로그아웃</button>`
           : `<button class="btn-primary" id="loginHere">로그인</button>`}</div>
       </div>
-      <h3>❤️ 저장한 곳 (${savedPlaces.length})</h3>
-      <section class="list">${savedHtml}</section>
-      <h3>📝 내가 쓴 리뷰 (${myReviews.length})</h3>
-      <div class="my-reviews">${revHtml}</div>
+      <div class="mp-tabs">${tabbar}</div>
+      <div class="mp-tabbody">${body}</div>
     </section>`;
 }
 function Modal() {
   if (!state.modal) return "";
   if (state.modal === "login") {
     const co = D.countries.map(c => `<option value="${c.id}" ${c.id === state.profileCountry ? "selected" : ""}>${c.flag} ${c.ko}</option>`).join("");
-    const ra = D.races.map(r => `<option value="${r.id}" ${r.id === state.profileRace ? "selected" : ""}>${r.ko}</option>`).join("");
     return `<div class="modal-ov" id="ov"><div class="modal"><h3>로그인 / 가입 <span>한국번호 없이 이메일로</span></h3>
       <label>이메일<input id="li-email" type="email" placeholder="you@example.com"></label>
       <label>닉네임<input id="li-nick" placeholder="Nickname"></label>
       <label>국적<select id="li-country">${co}</select></label>
-      <label>인종<select id="li-race">${ra}</select></label>
       <div class="modal-btns">${state.loggedIn ? `<button id="logout" class="btn-ghost">로그아웃</button>` : ""}
         <button id="loginCancel" class="btn-ghost">취소</button><button id="loginSubmit" class="btn-primary">로그인</button></div></div></div>`;
   }
@@ -368,7 +404,15 @@ function Modal() {
 
 /* ---------- 렌더 ---------- */
 function bindTop() {
-  document.querySelectorAll("[data-app]").forEach(b => b.addEventListener("click", () => { state.app = b.dataset.app; state.selectedPlace = null; state.page = null; render(); }));
+  document.querySelectorAll("[data-app]").forEach(b => b.addEventListener("click", () => { state.app = b.dataset.app; state.selectedPlace = null; state.page = null; state.selectedPost = null; render(); }));
+  const nh = document.getElementById("navHome"); if (nh) nh.addEventListener("click", () => { state.app = "reviews"; state.selectedPost = null; goHome(); });
+  document.querySelectorAll("[data-theme-btn]").forEach(b => b.addEventListener("click", () => { state.theme = b.dataset.themeBtn; render(); }));
+  document.querySelectorAll("[data-bn]").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.bn;
+    if (id === "mypage") { if (state.loggedIn) { state.app = "reviews"; state.page = "mypage"; state.selectedPlace = null; state.selectedPost = null; } else { state.modal = "login"; } }
+    else { state.app = id; state.selectedPlace = null; state.page = null; state.selectedPost = null; }
+    render();
+  }));
   const lb = document.getElementById("loginBtn");
   if (lb) lb.addEventListener("click", () => {
     if (!state.loggedIn) { state.modal = "login"; render(); }
@@ -386,7 +430,8 @@ function bindModal() {
     state.loggedIn = true; state.nick = nick;
     state.profileCountry = country; state.countryFilter = country;
     if (c) { state.profileRace = c.race; state.raceFilter = c.race; }
-    state.modal = state.pendingModal || null; state.pendingModal = null; // 로그인 후 하려던 동작(리뷰/콘텐츠)으로 바로 이어감
+    if (state.pendingCompose) { state.pendingCompose = false; state.compose = { rating: 5, tags: [], body: "", photo: null }; state.modal = null; state.pendingModal = null; }
+    else { state.modal = state.pendingModal || null; state.pendingModal = null; } // 로그인 후 하려던 동작으로 바로 이어감
     render();
   });
   on("rvCancel", "click", () => { state.modal = null; render(); });
@@ -430,6 +475,7 @@ function rankings(scope) {
   const ids = regionsInScope(scope), inScope = id => ids.includes(id), map = {};
   D.ambassadors.forEach(a => { if (inScope(a.region)) map[a.nick] = { nick: a.nick, country: a.country, region: a.region, followers: a.followers, posts: 0, likes: 0 }; });
   D.posts.forEach(p => {
+    if (state.demoEmpty && p.authorNick === "You") return;
     if (!inScope(p.region)) return;
     if (!map[p.authorNick]) map[p.authorNick] = { nick: p.authorNick, country: p.country, region: p.region, followers: 0, posts: 0, likes: 0 };
     map[p.authorNick].posts++; map[p.authorNick].likes += p.likes + (state.likedPosts.has(p.id) ? 1 : 0);
@@ -442,6 +488,7 @@ function AmbassadorApp() {
     ${AmbRank()}${AmbFeed()}</div>`;
 }
 function AmbRank() {
+  if (!state.ambInit) { state.ambInit = true; const top = rankings("all")[0]; if (top) state.ambRegion = top.region; }
   const opts = [`<option value="all" ${state.ambRegion === "all" ? "selected" : ""}>🌍 전체 (전국)</option>`];
   (D.provinces || []).forEach(pr => {
     opts.push(`<option value="${pr.id}" ${state.ambRegion === pr.id ? "selected" : ""}>📍 ${pr.ko}</option>`);
@@ -452,17 +499,20 @@ function AmbRank() {
   const scope = state.ambRegion === "all" ? "전국" : (rgSel ? rgSel.ko : (prov ? prov.ko : ""));
   const rows = rank.map((a, i) => {
     const c = byId(D.countries, a.country), rg = byId(D.regions, a.region);
-    return `<div class="rank-row"><span class="rk">${medal(i)}</span>
+    return `<div class="rank-row ${a.nick === state.nick ? "is-me" : ""}" data-nick="${esc(a.nick)}"><span class="rk">${medal(i)}</span>
       <span class="rk-avatar">${a.nick[0].toUpperCase()}</span>
-      <span class="rk-name">${esc(a.nick)}<em>${c ? c.flag + c.ko : ""} · ${rg ? rg.ko : ""}</em></span>
+      <span class="rk-name">${esc(a.nick)}${a.nick === state.nick ? ` <em class="me-badge">나</em>` : ""}<em>${c ? c.flag + c.ko : ""} · ${rg ? rg.ko : ""}</em></span>
       <span class="rk-stats">게시물 ${a.posts} · ❤️ ${a.likes} · 팔로워 ${a.followers.toLocaleString()}</span>
       <span class="rk-score">${a.score}</span></div>`;
   }).join("");
+  const myIdx = rank.findIndex(a => a.nick === state.nick);
+  const myRankBanner = state.loggedIn ? `<div class="my-rank">${myIdx >= 0 ? `내 랭킹 <b>#${myIdx + 1}</b> — ${scope}에서 활동 중` : `${scope} 내 랭킹 아직 없음 — ✍️ 글을 올려 도전하세요`}</div>` : "";
   const back = state.ambRegion !== "all" ? `<button class="rank-back" id="ambBack">← 전국(도 단위)</button>` : "";
   const note = prov ? `${prov.ko} — 시·구 단위 (핀 클릭 → 그 지역 랭킹)` : "도 단위 (핀 클릭 → 시·구로 확대)";
-  return `<section class="rank"><div class="rank-head"><h2>🏆 ${scope} 앰배서더 랭킹</h2>
+  return `<section class="rank"><div class="rank-head"><h2>🏆 앰배서더 랭킹</h2>
       <select id="ambRegion">${opts.join("")}</select></div>
-    <div class="map-note">🗺️ ${note} ${back}</div>
+    <div class="map-note">🗺️ ${scope} · ${note} ${back}</div>
+    ${myRankBanner}
     <div id="amb-map" class="amb-map"></div>
     <div class="rank-list">${rows || `<p class="empty">이 지역 앰배서더가 아직 없어요.</p>`}</div></section>`;
 }
@@ -490,7 +540,43 @@ function bindAmbassador() {
   on("newPost", "click", () => { if (state.loggedIn) state.modal = "post"; else { state.pendingModal = "post"; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
+  document.querySelectorAll(".rank-row[data-nick]").forEach(b => b.addEventListener("click", () => { state.profileNick = b.dataset.nick; render(); }));
   initAmbMap();
+}
+function ShortsApp() {
+  const cards = D.shorts.map(s => {
+    const c = byId(D.countries, s.country);
+    const liked = state.likedShorts.has(s.id), saved = state.savedShorts.has(s.id);
+    const likes = s.likes + (liked ? 1 : 0), saves = s.saves + (saved ? 1 : 0);
+    const shop = (s.tags || []).map(pid => {
+      const pl = byId(D.places, pid);
+      return pl ? `<button class="sshop-card" data-place="${pid}"><span class="sshop-emoji">${pl.emoji}</span><span><span class="sshop-name">${esc(pl.name)}</span><br><span class="sshop-tag">장소 보기 →</span></span></button>` : "";
+    }).join("");
+    return `<section class="short" data-short="${s.id}">
+      <div class="short-cover"><span>${s.emoji}</span></div>
+      <div class="short-top"><span>🎬 쇼츠</span><span>⋯</span></div>
+      <div class="short-rail">
+        <button class="srail-btn like ${liked ? "on" : ""}" data-slike="${s.id}">❤️<span>${likes.toLocaleString()}</span></button>
+        <button class="srail-btn save ${saved ? "on" : ""}" data-ssave="${s.id}">🔖<span>${saves.toLocaleString()}</span></button>
+        <button class="srail-btn">💬<span>${s.comments}</span></button>
+        <button class="srail-btn">↗<span>공유</span></button>
+      </div>
+      <div class="short-info">
+        <div class="short-author"><span class="cpost-av">${s.authorNick[0].toUpperCase()}</span>${esc(s.authorNick)} · ${c ? c.flag + c.ko : ""}</div>
+        <div class="short-cap">${esc(s.caption)}</div>
+      </div>
+      <div class="short-shop">${shop}</div>
+      <div class="short-next">↓ 다음 영상</div>
+    </section>`;
+  }).join("");
+  return `<div class="shorts-feed">${cards}</div>`;
+}
+function bindShorts() {
+  const toggle = (set, id) => { set.has(id) ? set.delete(id) : set.add(id); state.focusShort = id; render(); };
+  document.querySelectorAll("[data-slike]").forEach(b => b.addEventListener("click", () => toggle(state.likedShorts, b.dataset.slike)));
+  document.querySelectorAll("[data-ssave]").forEach(b => b.addEventListener("click", () => toggle(state.savedShorts, b.dataset.ssave)));
+  document.querySelectorAll(".short .sshop-card[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
+  if (state.focusShort) { const el = document.querySelector(`.short[data-short="${state.focusShort}"]`); if (el) el.scrollIntoView(); state.focusShort = null; }
 }
 function CommunityApp() {
   if (state.selectedPost) return PostDetail(byId(D.posts, state.selectedPost));
@@ -535,6 +621,62 @@ function bindCommunity() {
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; state.selectedPost = null; render(); }));
   const np = document.getElementById("newPost"); if (np) np.addEventListener("click", () => { if (state.loggedIn) state.modal = "post"; else { state.pendingModal = "post"; state.modal = "login"; } render(); });
 }
+function BottomNav() {
+  const items = [["reviews", "📝", "리뷰"], ["community", "💬", "커뮤니티"], ["shorts", "🎬", "쇼츠"], ["ambassadors", "🌟", "앰배서더"], ["mypage", "👤", "마이"]];
+  return `<nav class="bottomnav">${items.map(([id, ic, l]) => {
+    const on = id === "mypage" ? state.page === "mypage" : (state.app === id && state.page !== "mypage");
+    return `<button class="bn-item ${on ? "on" : ""}" data-bn="${id}"><span class="bn-ic">${ic}</span><span class="bn-l">${l}</span></button>`;
+  }).join("")}</nav>`;
+}
+function ReviewComposer() {
+  const p = byId(D.places, state.selectedPlace) || {};
+  const cz = state.compose;
+  const stars5 = [1, 2, 3, 4, 5].map(n => `<button class="cz-star ${n <= cz.rating ? "on" : ""}" data-czrating="${n}">★</button>`).join("");
+  const suggested = ["영어가능", "혼밥OK", "외국인친화", "가성비", "분위기좋음", "할랄", "예약필요", "번호없이OK"];
+  const sugg = suggested.filter(t => !cz.tags.includes(t)).map(t => `<button class="cz-sugg" data-czadd="${t}">#${t}</button>`).join("");
+  const chips = cz.tags.map(t => `<button class="cz-chip" data-czdel="${t}">#${esc(t)} ✕</button>`).join("");
+  return `<div class="composer">
+    <header class="cz-bar">
+      <button class="cz-cancel" id="czCancel">취소</button>
+      <span class="cz-title">리뷰 쓰기</span>
+      <button class="cz-submit" id="czSubmit">등록</button>
+    </header>
+    <div class="cz-body">
+      <div class="cz-place">${p.emoji || "📍"} <b>${esc(p.name || "")}</b></div>
+      <div class="cz-field"><label>별점</label><div class="cz-stars">${stars5}</div></div>
+      <div class="cz-field"><label>내용</label>
+        <textarea id="cz-text" class="cz-text" rows="6" placeholder="외국인 시각에서 좋았던 점·불편했던 점을 적어주면 큰 도움이 돼요.">${esc(cz.body)}</textarea>
+      </div>
+      <div class="cz-field"><label>해시태그</label>
+        <div class="cz-chips">${chips}</div>
+        <div class="cz-taginput"><input id="cz-tag" placeholder="#태그 입력" maxlength="20"><button id="czTagAdd" class="cz-tagadd">추가</button></div>
+        <div class="cz-suggs">${sugg}</div>
+      </div>
+      <div class="cz-field"><label>사진 (선택)</label>
+        ${cz.photo ? `<div class="cz-photo"><img src="${cz.photo}" alt=""><button id="czPhotoDel" class="cz-photodel">✕</button></div>` : `<label class="cz-photoadd">📷 사진 추가<input type="file" accept="image/*" id="cz-photo" hidden></label>`}
+      </div>
+    </div>
+  </div>`;
+}
+function bindComposer() {
+  const cz = state.compose;
+  const readBody = () => { const t = document.getElementById("cz-text"); if (t) cz.body = t.value; };
+  document.querySelectorAll("[data-czrating]").forEach(b => b.addEventListener("click", () => { readBody(); cz.rating = +b.dataset.czrating; render(); }));
+  document.querySelectorAll("[data-czadd]").forEach(b => b.addEventListener("click", () => { readBody(); if (!cz.tags.includes(b.dataset.czadd)) cz.tags.push(b.dataset.czadd); render(); }));
+  document.querySelectorAll("[data-czdel]").forEach(b => b.addEventListener("click", () => { readBody(); cz.tags = cz.tags.filter(t => t !== b.dataset.czdel); render(); }));
+  const addTag = () => { readBody(); const i = document.getElementById("cz-tag"); const v = (i.value || "").trim().replace(/^#+/, ""); if (v && !cz.tags.includes(v)) cz.tags.push(v); render(); };
+  const ta = document.getElementById("czTagAdd"); if (ta) ta.addEventListener("click", addTag);
+  const ti = document.getElementById("cz-tag"); if (ti) ti.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } });
+  const pf = document.getElementById("cz-photo"); if (pf) pf.addEventListener("change", () => { const f = pf.files && pf.files[0]; if (!f) return; readBody(); const fr = new FileReader(); fr.onload = e => { cz.photo = e.target.result; render(); }; fr.readAsDataURL(f); });
+  const pd = document.getElementById("czPhotoDel"); if (pd) pd.addEventListener("click", () => { readBody(); cz.photo = null; render(); });
+  const cc = document.getElementById("czCancel"); if (cc) cc.addEventListener("click", () => { state.compose = null; render(); });
+  const cs = document.getElementById("czSubmit"); if (cs) cs.addEventListener("click", () => {
+    readBody();
+    if (!cz.body.trim()) { const t = document.getElementById("cz-text"); if (t) t.focus(); return; }
+    D.reviews.push({ id: "u" + Date.now(), place: state.selectedPlace, nick: state.nick || "You", country: state.profileCountry, race: state.profileRace, rating: cz.rating, body: cz.body.trim(), tags: cz.tags.slice(), photo: cz.photo || undefined });
+    state.compose = null; render();
+  });
+}
 function render() {
   document.documentElement.dataset.theme = state.theme;
   document.getElementById("app").innerHTML = TopNav() +
@@ -542,11 +684,18 @@ function render() {
       ? AmbassadorApp()
       : state.app === "community"
       ? CommunityApp()
+      : state.app === "shorts"
+      ? ShortsApp()
+      : state.page === "mypage"
+      ? `<div id="results"></div>`
       : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
-    + Modal();
+    + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "");
   bindTop(); bindModal();
+  if (state.compose) bindComposer();
+  if (state.profileNick) bindProfile();
   if (state.app === "ambassadors") bindAmbassador();
   else if (state.app === "community") bindCommunity();
+  else if (state.app === "shorts") bindShorts();
   else { bindControls(); renderResults(); }
 }
 function renderResults() {
@@ -612,7 +761,6 @@ function bindControls() {
   on("region", "change", e => { state.region = e.target.value; state.selectedPlace = null; state.page = null; renderResults(); });
   on("profileCountry", "change", e => setProfile(e.target.value));
   on("profileRace", "change", e => { state.profileRace = e.target.value; state.raceFilter = e.target.value; render(); });
-  document.querySelectorAll("[data-theme-btn]").forEach(b => b.addEventListener("click", () => { state.theme = b.dataset.themeBtn; render(); }));
   document.querySelectorAll("[data-cat]").forEach(b => b.addEventListener("click", () => {
     state.category = b.dataset.cat; state.selectedPlace = null; state.page = null;
     state.sort = catOf(b.dataset.cat).kind === "product" ? "fit" : (state.sort === "fit" ? "rating" : state.sort);
@@ -625,6 +773,8 @@ function bindResults() {
   on("backHome", "click", goHome);
   on("editProfile", "click", () => { state.modal = "login"; render(); });
   on("logout2", "click", () => { state.loggedIn = false; state.nick = ""; render(); });
+  document.querySelectorAll("[data-mytab]").forEach(b => b.addEventListener("click", () => { state.myTab = b.dataset.mytab; render(); }));
+  document.querySelectorAll(".mp-tabbody [data-pg]").forEach(b => b.addEventListener("click", () => openPgItem(b.dataset.pg)));
   on("loginHere", "click", () => { state.modal = "login"; render(); });
   document.querySelectorAll("#results .my-review[data-place], #results .top3-card, #results .rec-alt").forEach(el => el.addEventListener("click", () => { state.selectedPlace = el.dataset.place; render(); }));
   on("raceFilter", "change", e => { state.raceFilter = e.target.value; renderResults(); });
@@ -634,7 +784,7 @@ function bindResults() {
   on("grpOnly", "click", () => { state.showAll = false; renderResults(); });
   on("allRv", "click", () => { state.showAll = true; renderResults(); });
   on("reviewSort", "change", e => { state.reviewSort = e.target.value; renderResults(); });
-  on("writeReview", "click", () => { if (state.loggedIn) state.modal = "review"; else { state.pendingModal = "review"; state.modal = "login"; } render(); });
+  on("writeReview", "click", () => { if (state.loggedIn) state.compose = { rating: 5, tags: [], body: "", photo: null }; else { state.pendingCompose = true; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-chip]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.chip; state.quick[k] = !state.quick[k]; renderResults(); }));
   document.querySelectorAll("[data-savedonly]").forEach(b => b.addEventListener("click", () => { state.savedOnly = !state.savedOnly; renderResults(); }));
   document.querySelectorAll("[data-trans]").forEach(b => b.addEventListener("click", () => {
@@ -657,11 +807,17 @@ function bindResults() {
 (function () {
   try {
     const q = new URLSearchParams(location.search);
-    if (q.get("app") === "ambassadors" || q.get("app") === "community") state.app = q.get("app");
+    if (["ambassadors", "community", "shorts"].includes(q.get("app"))) state.app = q.get("app");
+    if (["ohou", "yelp", "slim"].includes(q.get("theme"))) state.theme = q.get("theme");
     if (q.get("cat") && catOf(q.get("cat"))) state.category = q.get("cat");
     if (q.get("race")) { state.profileRace = q.get("race"); state.raceFilter = q.get("race"); }
     if (q.get("place") && byId(D.places, q.get("place"))) state.selectedPlace = q.get("place");
     if (q.get("post") && byId(D.posts, q.get("post"))) { state.app = "community"; state.selectedPost = q.get("post"); }
+    if (q.get("short") && byId(D.shorts, q.get("short"))) { state.app = "shorts"; state.focusShort = q.get("short"); }
+    if (q.get("compose") && byId(D.places, q.get("compose"))) { state.loggedIn = true; state.nick = state.nick || "You"; state.selectedPlace = q.get("compose"); state.compose = { rating: 5, tags: [], body: "", photo: null }; }
+    if (q.get("empty")) state.demoEmpty = true;
+    if (q.get("mypage")) { state.loggedIn = true; state.nick = state.nick || "You"; state.app = "reviews"; state.page = "mypage"; if (q.get("mypage") === "empty") state.demoEmpty = true; }
+    if (q.get("profile")) state.profileNick = q.get("profile");
   } catch (e) { }
 })();
 render();

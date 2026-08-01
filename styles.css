@@ -1,23 +1,39 @@
 /* GLOU 리뷰 — 오늘의집형 클린 스타일 (블루 액센트) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
+  /* ===== 디자인 프리셋 = 오늘의집형 (에어리·둥근·블루) : 기본값 ===== */
   --bg: #ffffff; --card: #fff; --line: #edeff2; --ink: #26282b; --sub: #8b95a1;
   --star: #ffb020; --good: #12b886; --good-soft: #e7f7f1;
-  /* 기본 = 오늘의집형 블루 */
   --brand: #2f80ed; --brand-2: #1c6ad4; --brand-soft: #eaf2ff;
   --shadow: 0 2px 12px rgba(20,30,60,.06);
+  /* 구조 토큰 — 프리셋마다 달라짐 */
+  --radius: 12px; --radius-lg: 14px; --card-pad: 12px;
+  --search-bg: #f4f5f7; --search-border: transparent;
+  --elev: var(--shadow); --brand-weight: 800; --tracking: -0.01em;
 }
-:root[data-theme="mint"]  { --brand: #12b886; --brand-2: #0ca678; --brand-soft: #e6f7f0; }
-:root[data-theme="coral"] { --brand: #ff6b6b; --brand-2: #e85a5a; --brand-soft: #fff0f0; }
+/* Yelp — 레드·컴팩트·각진·굵은 */
+:root[data-theme="yelp"] {
+  --brand: #d32323; --brand-2: #b31d1d; --brand-soft: #fdecec; --line: #e6e8ec;
+  --radius: 7px; --radius-lg: 8px; --card-pad: 11px;
+  --search-bg: #ffffff; --search-border: var(--brand);
+  --elev: 0 1px 3px rgba(0,0,0,.1); --brand-weight: 900; --tracking: 0;
+}
+/* 슬림 — 날렵·얄쌍·모노톤·플랫(그림자 없음)·넓은 여백 */
+:root[data-theme="slim"] {
+  --brand: #17181c; --brand-2: #000000; --brand-soft: #f2f3f5; --line: #f0f1f3; --sub: #9aa1ab;
+  --radius: 9px; --radius-lg: 10px; --card-pad: 15px;
+  --search-bg: #f7f8fa; --search-border: #e9ebee;
+  --elev: none; --brand-weight: 700; --tracking: -0.02em;
+}
 
 body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  background: var(--bg); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+  background: var(--bg); color: var(--ink); line-height: 1.5; -webkit-font-smoothing: antialiased; letter-spacing: var(--tracking); }
 #app { max-width: 1040px; margin: 0 auto; padding: 14px; }
 
 /* header + theme switch */
 .hdr { padding: 4px 2px 10px; }
 .hdr-row { display: flex; align-items: center; justify-content: space-between; }
-.brand { font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+.brand { font-size: 26px; font-weight: var(--brand-weight); letter-spacing: -.5px; }
 .brand span { color: var(--brand); }
 .tag { color: var(--sub); font-size: 13px; margin-top: 2px; }
 .tag b { color: var(--ink); }
@@ -26,7 +42,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .theme-btn.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
 
 /* search bar (Yelp signature) */
-.searchbar { display: flex; margin: 6px 0 14px; background: #f4f5f7; border-radius: 14px; overflow: hidden; }
+.searchbar { display: flex; margin: 6px 0 14px; background: var(--search-bg); border: 1.5px solid var(--search-border); border-radius: var(--radius-lg); overflow: hidden; }
 .searchbar .s-what { flex: 1; border: none; padding: 13px 16px; font-size: 15px; outline: none; background: transparent; }
 .searchbar .s-where { border: none; border-left: 1px solid var(--line); padding: 0 12px; font-size: 14px; background: transparent; outline: none; }
 .searchbar .s-go { border: none; background: var(--brand); color: #fff; font-weight: 700; padding: 0 22px; cursor: pointer; }
@@ -39,7 +55,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 
 /* category pills */
 .pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
-.pill { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 74px; padding: 10px 4px; border: 1px solid var(--line); background: #fff; border-radius: 12px; cursor: pointer; color: var(--sub); font-size: 12px; }
+.pill { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 74px; padding: 10px 4px; border: 1px solid var(--line); background: #fff; border-radius: var(--radius); cursor: pointer; color: var(--sub); font-size: 12px; }
 .pill .pill-emoji { font-size: 22px; }
 .pill.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 700; }
 
@@ -56,8 +72,8 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .empty { color: var(--sub); padding: 30px; text-align: center; }
 
 /* card (Yelp-like: thumb + body + rating + badges) */
-.card { display: flex; gap: 12px; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 12px; cursor: pointer; transition: .1s; }
-.card:hover { border-color: #d6dce3; box-shadow: var(--shadow); }
+.card { display: flex; gap: 12px; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: var(--radius); padding: var(--card-pad); cursor: pointer; transition: .1s; }
+.card:hover { border-color: #d6dce3; box-shadow: var(--elev); }
 .thumb { flex: 0 0 64px; height: 64px; border-radius: 10px; background: var(--brand-soft); display: grid; place-items: center; font-size: 30px; }
 .card-body { min-width: 0; flex: 1; }
 .name { font-size: 16px; font-weight: 700; }
@@ -143,7 +159,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
   #app { padding: 12px 12px 40px; }
 
   /* 상단 네비 */
-  .topnav { gap: 8px; flex-wrap: wrap; }
+  .topnav { gap: 8px; flex-wrap: nowrap; }
   .tn-brand { font-size: 18px; }
   .tn-tab { padding: 6px 12px; font-size: 13px; }
   .topnav .login-btn { margin-left: auto; }
@@ -151,7 +167,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
   /* 히어로 헤더: 데모용 팔레트 스위치는 모바일에서 숨김 */
   .hdr-row { flex-wrap: wrap; gap: 6px 8px; }
   .brand { font-size: 22px; }
-  .theme-sw { display: none; }
+  .theme-sw { display: flex; }
   .tag { font-size: 12px; }
 
   /* 지도가 페이지 가로스크롤 유발하지 않도록 */
@@ -307,10 +323,11 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .modal input[type=file] { padding: 7px; font-size: 12px; }
 
 /* 상단 네비 (리뷰 / 앰배서더 / 로그인) */
-.topnav { display: flex; align-items: center; gap: 10px; padding: 8px 2px 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
-.tn-brand { font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+.topnav { display: flex; align-items: center; gap: 10px; padding: 8px 2px 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; flex-wrap: nowrap; }
+.tn-brand { font-size: 20px; font-weight: 800; letter-spacing: -.5px; flex: 0 0 auto; }
 .tn-brand span { color: var(--brand); }
-.tn-tabs { display: flex; gap: 6px; }
+.tn-tabs { display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.theme-sw, .topnav .login-btn { flex: 0 0 auto; }
 .tn-tab { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; cursor: pointer; color: var(--sub); }
 .tn-tab.on { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
 .topnav .login-btn { margin-left: auto; }
@@ -360,7 +377,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .cchip { flex: 0 0 auto; border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 999px; padding: 7px 15px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .cchip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
 .comm-grid { column-count: 2; column-gap: 10px; margin-top: 10px; }
-.cpost { break-inside: avoid; margin-bottom: 10px; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow); transition: transform .12s ease; }
+.cpost { break-inside: avoid; margin-bottom: 10px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; box-shadow: var(--elev); transition: transform .12s ease; }
 .cpost:active { transform: scale(.98); }
 .cpost-thumb { aspect-ratio: 1/1; display: grid; place-items: center; font-size: 46px; }
 .cpost:nth-child(6n+1) .cpost-thumb { background: linear-gradient(135deg,#eef2ff,#f7f9ff); }
@@ -382,3 +399,105 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .cdetail-meta { display: flex; align-items: center; gap: 6px; color: var(--sub); font-size: 13px; }
 .cdetail-body { margin: 16px 0; line-height: 1.65; color: var(--ink); font-size: 14.5px; }
 .cdetail-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* ===== 쇼츠 (세로 풀스크린 + 쇼퍼블 캐러셀) ===== */
+.tn-tabs { overflow-x: auto; scrollbar-width: none; }
+.tn-tabs::-webkit-scrollbar { display: none; }
+.shorts-feed { height: calc(100vh - 74px); margin: 0 -14px -14px; overflow-y: auto; scroll-snap-type: y mandatory; background: #000; scrollbar-width: none; }
+.shorts-feed::-webkit-scrollbar { display: none; }
+.short { position: relative; height: 100%; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+.short:nth-child(4n+1) .short-cover { background: linear-gradient(160deg, #3a2b4d, #6b4a7a); }
+.short:nth-child(4n+2) .short-cover { background: linear-gradient(160deg, #204d4a, #3f8079); }
+.short:nth-child(4n+3) .short-cover { background: linear-gradient(160deg, #4d3a2b, #a5794a); }
+.short:nth-child(4n) .short-cover { background: linear-gradient(160deg, #2b3a4d, #4a6b8a); }
+.short-cover { position: absolute; inset: 0; display: grid; place-items: center; font-size: 130px; }
+.short::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 38%, rgba(0,0,0,.62)); z-index: 1; }
+.short-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 14px 16px; color: #fff; font-weight: 700; font-size: 14px; z-index: 3; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.short-rail { position: absolute; right: 10px; top: 42%; display: flex; flex-direction: column; gap: 18px; align-items: center; z-index: 5; }
+.srail-btn { background: none; border: none; color: #fff; font-size: 26px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.srail-btn span { font-size: 11px; font-weight: 600; }
+.srail-btn.like.on { color: #ff5a5f; }
+.short-info { position: relative; z-index: 2; padding: 0 74px 10px 16px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.short-author { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; }
+.short-author .cpost-av { background: rgba(255,255,255,.28); color: #fff; }
+.short-cap { margin-top: 8px; font-size: 14px; line-height: 1.45; }
+.short-shop { position: relative; z-index: 2; display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 20px; scrollbar-width: none; }
+.short-shop::-webkit-scrollbar { display: none; }
+.sshop-card { flex: 0 0 auto; display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,.96); border: none; border-radius: 12px; padding: 8px 12px 8px 10px; cursor: pointer; text-align: left; }
+.sshop-emoji { font-size: 24px; }
+.sshop-name { font-size: 12.5px; font-weight: 700; color: #17181c; }
+.sshop-tag { font-size: 11px; color: var(--brand); font-weight: 600; }
+.short-next { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.6); font-size: 11px; z-index: 2; }
+
+/* ===== 반응형 네비 (데스크톱=상단 / 모바일=하단바, 오늘의집식) ===== */
+.tn-brand { cursor: pointer; }
+.bottomnav { display: none; }
+@media (min-width: 768px) { .theme-sw { display: flex; } }
+@media (max-width: 767px) {
+  .tn-tabs { display: none; }
+  .theme-sw { display: none; }
+  .topnav .login-btn { display: none; }
+  #app { padding-bottom: 78px; }
+  .bottomnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); z-index: 40; padding: 7px 0 calc(7px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -2px 12px rgba(0,0,0,.05); }
+  .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: var(--sub); font-size: 10.5px; cursor: pointer; padding: 3px 0; letter-spacing: 0; }
+  .bn-item.on { color: var(--brand); font-weight: 700; }
+  .bn-ic { font-size: 21px; line-height: 1; }
+  .fab { bottom: 88px; }
+  .shorts-feed { height: calc(100vh - 74px - 62px); }
+}
+
+/* ===== 리뷰 작성 전체화면 편집기 (오늘의집/인스타/Yelp식) ===== */
+.composer { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: flex; flex-direction: column; }
+.cz-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.cz-cancel { background: none; border: none; font-size: 15px; color: var(--sub); cursor: pointer; }
+.cz-title { font-weight: 800; font-size: 16px; }
+.cz-submit { background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.cz-body { flex: 1; overflow-y: auto; padding: 16px 16px 48px; max-width: 620px; width: 100%; margin: 0 auto; }
+.cz-place { display: flex; align-items: center; gap: 8px; font-size: 16px; padding: 11px 13px; background: var(--brand-soft); border-radius: 12px; margin-bottom: 18px; }
+.cz-field { margin-bottom: 20px; }
+.cz-field > label { display: block; font-size: 13px; font-weight: 700; color: var(--sub); margin-bottom: 8px; }
+.cz-stars { display: flex; gap: 4px; }
+.cz-star { background: none; border: none; font-size: 30px; color: #dfe3e8; cursor: pointer; padding: 0; line-height: 1; }
+.cz-star.on { color: var(--star); }
+.cz-text { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 14px; font-size: 15px; font-family: inherit; resize: vertical; line-height: 1.6; outline: none; }
+.cz-text:focus { border-color: var(--brand); }
+.cz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.cz-chip { background: var(--brand-soft); color: var(--brand); border: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cz-taginput { display: flex; gap: 8px; margin-bottom: 10px; }
+.cz-taginput input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; outline: none; }
+.cz-taginput input:focus { border-color: var(--brand); }
+.cz-tagadd { background: var(--ink); color: #fff; border: none; border-radius: 10px; padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer; }
+.cz-suggs { display: flex; flex-wrap: wrap; gap: 6px; }
+.cz-sugg { background: #fff; border: 1px solid var(--line); color: var(--sub); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.cz-photoadd { display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--line); border-radius: 12px; padding: 14px 18px; color: var(--sub); font-size: 14px; cursor: pointer; }
+.cz-photo { position: relative; display: inline-block; }
+.cz-photo img { max-width: 180px; border-radius: 12px; display: block; }
+.cz-photodel { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.6); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; }
+.rv-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.rv-tag-chip { background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+
+/* ===== 프로필 격자(인스타식) · 마이 탭 · 인플루언서 프로필 · 내 랭킹 ===== */
+.pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.pg-cell { position: relative; aspect-ratio: 1; border: none; cursor: pointer; display: grid; place-items: center; overflow: hidden; }
+.pg-cell:nth-child(6n+1) { background: linear-gradient(135deg,#eef2ff,#f7f9ff); }
+.pg-cell:nth-child(6n+2) { background: linear-gradient(135deg,#e7f7f1,#f3fbf8); }
+.pg-cell:nth-child(6n+3) { background: linear-gradient(135deg,#fff1e6,#fff8f2); }
+.pg-cell:nth-child(6n+4) { background: linear-gradient(135deg,#fdeaf1,#fef5f9); }
+.pg-cell:nth-child(6n+5) { background: linear-gradient(135deg,#eafbff,#f4fdff); }
+.pg-cell:nth-child(6n) { background: linear-gradient(135deg,#f0eefe,#f8f6ff); }
+.pg-emoji { font-size: 40px; }
+.pg-badge { position: absolute; top: 6px; right: 7px; font-size: 15px; }
+.pg-likes { position: absolute; bottom: 5px; left: 6px; font-size: 11px; color: #fff; background: rgba(0,0,0,.42); border-radius: 8px; padding: 1px 7px; font-weight: 600; }
+.mp-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 16px 0 12px; }
+.mp-tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; padding: 11px 0; font-size: 14px; font-weight: 600; color: var(--sub); cursor: pointer; }
+.mp-tab.on { color: var(--ink); border-bottom-color: var(--brand); font-weight: 800; }
+.prof-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.prof-avatar { width: 68px; height: 68px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 28px; font-weight: 800; flex: 0 0 auto; }
+.prof-id h2 { font-size: 19px; font-weight: 800; }
+.prof-meta { color: var(--sub); font-size: 13px; margin-top: 3px; }
+.prof-stats { font-size: 13px; margin-top: 8px; }
+.my-rank { background: var(--brand-soft); color: var(--brand-2); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.my-rank b { color: var(--brand); }
+.rank-row[data-nick] { cursor: pointer; }
+.rank-row.is-me { background: var(--brand-soft); border-radius: 10px; }
+.me-badge { background: var(--brand); color: #fff !important; border-radius: 6px; padding: 1px 6px; font-size: 10px; font-style: normal !important; margin-left: 4px; }

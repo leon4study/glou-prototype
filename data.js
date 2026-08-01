@@ -131,7 +131,15 @@ const GLOU_DATA = {
     { id: "po7", authorNick: "Yuki", country: "jp", region: "seoul_seongsu", place: null, tag: "beauty", title: "일본인 피부에 맞는 쿠션 3", body: "K-beauty cushions that actually match Japanese skin tones.", thumb: "💄", likes: 320 },
     { id: "po8", authorNick: "Chloé", country: "fr", region: "seoul_gn", place: null, tag: "beauty", title: "Winter skincare haul", body: "Olive Young picks for dry skin in Seoul.", thumb: "🧴", likes: 140 },
     { id: "po9", authorNick: "Bat", country: "mn", region: "jeonju", place: null, tag: "cafe", title: "전주 로컬 디저트 카페", body: "Quiet cafes + the best choco pie in town.", thumb: "🍰", likes: 75 },
-    { id: "po10", authorNick: "Minh", country: "vn", region: "seoul_mapo", place: "p3", tag: "food", title: "Halal-friendly eats near Hongdae", body: "Where I actually eat as a Muslim student.", thumb: "🥘", likes: 210 }
+    { id: "po10", authorNick: "Minh", country: "vn", region: "seoul_mapo", place: "p3", tag: "food", title: "Halal-friendly eats near Hongdae", body: "Where I actually eat as a Muslim student.", thumb: "🥘", likes: 210 },
+    { id: "pou1", authorNick: "You", country: "us", region: "seoul_seongsu", place: "p8", tag: "cafe", title: "성수 감성 카페 다녀왔어요", body: "영어 메뉴 있고 외국인 응대도 편했어요. 사진 찍기 좋은 곳!", thumb: "☕", likes: 12 }
+  ],
+  // 쇼츠(쇼퍼블 세로영상) — 콘텐츠 → 장소 전환 동선
+  shorts: [
+    { id: "sh1", authorNick: "Jake", country: "us", emoji: "🍖", caption: "현지인처럼 삼겹살 먹는 법 — 관광지 말고 여기 🇰🇷", place: "p3", tags: ["p3", "p9"], likes: 1240, saves: 320, comments: 88 },
+    { id: "sh2", authorNick: "Yuki", country: "jp", emoji: "☕", caption: "성수 감성 카페 투어 — 일본인이 고른 5곳", place: "p8", tags: ["p8"], likes: 2130, saves: 540, comments: 120 },
+    { id: "sh3", authorNick: "Bat", country: "mn", emoji: "🏯", caption: "몽골인이 간 전주 한옥마을 — 관광객 거의 없음", place: "p6", tags: ["p6"], likes: 860, saves: 190, comments: 44 },
+    { id: "sh4", authorNick: "Chloé", country: "fr", emoji: "🎨", caption: "Busan hidden gems — 감천문화마을 + 로컬 해산물", place: "p13", tags: ["p13", "p10"], likes: 1540, saves: 410, comments: 76 }
   ]
 };
 if (typeof module !== "undefined") { module.exports = GLOU_DATA; }
