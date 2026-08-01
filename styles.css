@@ -501,3 +501,25 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .rank-row[data-nick] { cursor: pointer; }
 .rank-row.is-me { background: var(--brand-soft); border-radius: 10px; }
 .me-badge { background: var(--brand); color: #fff !important; border-radius: 6px; padding: 1px 6px; font-size: 10px; font-style: normal !important; margin-left: 4px; }
+
+/* ===== 설정 화면 ===== */
+.settings { padding: 4px 2px 24px; }
+.set-title { font-size: 20px; font-weight: 800; margin-bottom: 18px; }
+.set-section { margin-bottom: 24px; }
+.set-section h3 { font-size: 13px; color: var(--sub); font-weight: 700; margin-bottom: 10px; }
+.set-opts { display: flex; flex-direction: column; gap: 8px; }
+.set-opt { display: flex; align-items: center; justify-content: space-between; border: 1.5px solid var(--line); background: #fff; border-radius: 12px; padding: 14px 16px; cursor: pointer; text-align: left; }
+.set-opt.on { border-color: var(--brand); background: var(--brand-soft); }
+.set-opt-t { display: flex; flex-direction: column; gap: 3px; }
+.set-opt-t b { font-size: 15px; font-weight: 700; }
+.set-opt-t span { font-size: 12px; color: var(--sub); }
+.set-check { color: var(--brand); font-weight: 800; font-size: 18px; }
+.set-row { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 13px 16px; font-size: 14px; margin-bottom: 8px; cursor: pointer; }
+.set-row.danger { color: #e03131; }
+.set-note { color: var(--sub); font-size: 12px; }
+
+/* ===== 쇼츠 모바일 몰입: 상단바 숨김 ===== */
+@media (max-width: 767px) {
+  :root[data-app="shorts"] .topnav { display: none; }
+  :root[data-app="shorts"] .shorts-feed { height: calc(100vh - 62px); margin-top: -14px; }
+}

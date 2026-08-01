@@ -101,7 +101,7 @@ function TopNav() {
   const themes = [["ohou", "오늘의집"], ["yelp", "Yelp"], ["slim", "슬림"]];
   const sw = themes.map(([id, l]) => `<button class="theme-btn ${state.theme === id ? "on" : ""}" data-theme-btn="${id}">${l}</button>`).join("");
   return `<nav class="topnav">
-      <div class="tn-brand" id="navHome" title="홈으로">GL<span>OU</span></div>
+      ${state.app === "shorts" ? "" : `<div class="tn-brand" id="navHome" title="홈으로">GL<span>OU</span></div>`}
       <div class="tn-tabs">${tabs.map(([id, l]) => `<button class="tn-tab ${state.app === id ? "on" : ""}" data-app="${id}">${l}</button>`).join("")}</div>
       <div class="theme-sw" title="디자인 프리셋">${sw}</div>
       ${state.app === "shorts" ? "" : `<button id="loginBtn" class="login-btn">${state.loggedIn ? "👤 " + esc(state.nick) : "🔑 로그인"}</button>`}
@@ -364,11 +364,25 @@ function MyPage() {
         <div class="mp-id"><h2>${esc(nick)}</h2>
           <div class="meta">${c.flag}${c.ko} · ${race.ko} · ${state.loggedIn ? "로그인됨" : "비로그인"}</div></div>
         <div class="mp-actions">${state.loggedIn
-          ? `<button class="btn-ghost" id="editProfile">프로필 수정</button><button class="btn-ghost" id="logout2">로그아웃</button>`
+          ? `<button class="btn-ghost" id="openSettings">⚙️ 설정</button>`
           : `<button class="btn-primary" id="loginHere">로그인</button>`}</div>
       </div>
       <div class="mp-tabs">${tabbar}</div>
       <div class="mp-tabbody">${body}</div>
+    </section>`;
+}
+function Settings() {
+  const presets = [["ohou", "오늘의집", "밝고 둥근 · 블루"], ["yelp", "Yelp", "레드 · 컴팩트"], ["slim", "슬림", "모노톤 · 미니멀"]];
+  const opts = presets.map(([id, name, desc]) => `<button class="set-opt ${state.theme === id ? "on" : ""}" data-theme-btn="${id}"><span class="set-opt-t"><b>${name}</b><span>${desc}</span></span>${state.theme === id ? `<span class="set-check">✓</span>` : ""}</button>`).join("");
+  return `<button class="back" id="backMy">← 마이페이지</button>
+    <section class="settings">
+      <h2 class="set-title">⚙️ 설정</h2>
+      <div class="set-section"><h3>디자인 테마</h3><div class="set-opts">${opts}</div></div>
+      <div class="set-section"><h3>계정</h3>
+        <button class="set-row" id="editProfile">프로필 수정</button>
+        <button class="set-row danger" id="logout2">로그아웃</button>
+      </div>
+      <p class="set-note">언어·알림 설정은 추후 추가 예정</p>
     </section>`;
 }
 function Modal() {
@@ -679,6 +693,7 @@ function bindComposer() {
 }
 function render() {
   document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.app = state.app;
   document.getElementById("app").innerHTML = TopNav() +
     (state.app === "ambassadors"
       ? AmbassadorApp()
@@ -686,7 +701,7 @@ function render() {
       ? CommunityApp()
       : state.app === "shorts"
       ? ShortsApp()
-      : state.page === "mypage"
+      : (state.page === "mypage" || state.page === "settings")
       ? `<div id="results"></div>`
       : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
     + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "");
@@ -701,6 +716,7 @@ function render() {
 function renderResults() {
   document.getElementById("results").innerHTML = state.selectedPlace
     ? Detail(byId(D.places, state.selectedPlace))
+    : state.page === "settings" ? Settings()
     : state.page === "mypage" ? MyPage()
     : FilterRow() + ChipsRow() + TopThree() + (catOf(state.category).kind === "product"
         ? `<div class="split">${List()}</div>`
@@ -775,6 +791,9 @@ function bindResults() {
   on("logout2", "click", () => { state.loggedIn = false; state.nick = ""; render(); });
   document.querySelectorAll("[data-mytab]").forEach(b => b.addEventListener("click", () => { state.myTab = b.dataset.mytab; render(); }));
   document.querySelectorAll(".mp-tabbody [data-pg]").forEach(b => b.addEventListener("click", () => openPgItem(b.dataset.pg)));
+  on("openSettings", "click", () => { state.page = "settings"; render(); });
+  on("backMy", "click", () => { state.page = "mypage"; render(); });
+  document.querySelectorAll(".settings [data-theme-btn]").forEach(b => b.addEventListener("click", () => { state.theme = b.dataset.themeBtn; render(); }));
   on("loginHere", "click", () => { state.modal = "login"; render(); });
   document.querySelectorAll("#results .my-review[data-place], #results .top3-card, #results .rec-alt").forEach(el => el.addEventListener("click", () => { state.selectedPlace = el.dataset.place; render(); }));
   on("raceFilter", "change", e => { state.raceFilter = e.target.value; renderResults(); });
@@ -817,6 +836,7 @@ function bindResults() {
     if (q.get("compose") && byId(D.places, q.get("compose"))) { state.loggedIn = true; state.nick = state.nick || "You"; state.selectedPlace = q.get("compose"); state.compose = { rating: 5, tags: [], body: "", photo: null }; }
     if (q.get("empty")) state.demoEmpty = true;
     if (q.get("mypage")) { state.loggedIn = true; state.nick = state.nick || "You"; state.app = "reviews"; state.page = "mypage"; if (q.get("mypage") === "empty") state.demoEmpty = true; }
+    if (q.get("settings")) { state.loggedIn = true; state.nick = state.nick || "You"; state.app = "reviews"; state.page = "settings"; }
     if (q.get("profile")) state.profileNick = q.get("profile");
   } catch (e) { }
 })();
