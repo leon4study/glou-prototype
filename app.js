@@ -26,6 +26,7 @@ const state = {
   userLoc: null, showAll: false, reviewSort: "recent",
   votes: {}, voted: new Set(), translated: new Set(),
   app: "reviews", ambRegion: "all", likedPosts: new Set(),
+  selectedPost: null, commFilter: "all",
   selectedPlace: null, page: null, theme: "yelp",
   loggedIn: false, nick: "", modal: null, pendingModal: null
 };
@@ -93,7 +94,7 @@ function Badges(p) {
   return `<div class="badges">${b.join("")}</div>`;
 }
 function TopNav() {
-  const tabs = [["reviews", "📝 리뷰"], ["ambassadors", "🌟 앰배서더"]];
+  const tabs = [["reviews", "📝 리뷰"], ["community", "💬 커뮤니티"], ["ambassadors", "🌟 앰배서더"]];
   return `<nav class="topnav">
       <div class="tn-brand">GL<span>OU</span></div>
       <div class="tn-tabs">${tabs.map(([id, l]) => `<button class="tn-tab ${state.app === id ? "on" : ""}" data-app="${id}">${l}</button>`).join("")}</div>
@@ -409,7 +410,7 @@ function bindModal() {
     const region = document.getElementById("po-region").value;
     const placeId = document.getElementById("po-place").value || null;
     const pl = placeId ? byId(D.places, placeId) : null;
-    D.posts.unshift({ id: "post" + Date.now(), authorNick: state.nick || "You", country: state.profileCountry, region, place: placeId, title, body, thumb: pl ? pl.emoji : "📸", likes: 0 });
+    D.posts.unshift({ id: "post" + Date.now(), authorNick: state.nick || "You", country: state.profileCountry, region, place: placeId, tag: (state.commFilter && state.commFilter !== "all") ? state.commFilter : "food", title, body, thumb: pl ? pl.emoji : "📸", likes: 0 });
     state.modal = null; render();
   });
 }
@@ -491,15 +492,61 @@ function bindAmbassador() {
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
   initAmbMap();
 }
+function CommunityApp() {
+  if (state.selectedPost) return PostDetail(byId(D.posts, state.selectedPost));
+  const filters = [["all", "전체"], ["food", "맛집"], ["cafe", "카페"], ["beauty", "뷰티"], ["travel", "여행"]];
+  const chips = filters.map(([k, l]) => `<button class="cchip ${state.commFilter === k ? "on" : ""}" data-cfilter="${k}">${l}</button>`).join("");
+  const posts = D.posts.filter(p => state.commFilter === "all" || p.tag === state.commFilter);
+  const cards = posts.map(p => {
+    const c = byId(D.countries, p.country), liked = state.likedPosts.has(p.id), likes = p.likes + (liked ? 1 : 0);
+    return `<article class="cpost" data-post="${p.id}">
+      <div class="cpost-thumb"><span>${p.thumb}</span></div>
+      <div class="cpost-b"><div class="cpost-title">${esc(p.title)}</div>
+        <div class="cpost-meta"><span class="cpost-av">${p.authorNick[0].toUpperCase()}</span>${esc(p.authorNick)} · ${c ? c.flag : ""}</div>
+        <button class="cpost-like ${liked ? "on" : ""}" data-like="${p.id}">❤️ ${likes}</button></div>
+    </article>`;
+  }).join("");
+  return `<div class="comm">
+    <div class="comm-head"><h1>커뮤니티</h1><p>같은 나라 사람들의 진짜 로컬 콘텐츠</p></div>
+    <div class="comm-filters">${chips}</div>
+    <div class="comm-grid">${cards || `<p class="empty">콘텐츠가 아직 없어요.</p>`}</div>
+    <button class="fab" id="newPost" title="콘텐츠 올리기">✍️</button></div>`;
+}
+function PostDetail(p) {
+  if (!p) { state.selectedPost = null; return CommunityApp(); }
+  const c = byId(D.countries, p.country), rg = byId(D.regions, p.region), pl = p.place ? byId(D.places, p.place) : null;
+  const liked = state.likedPosts.has(p.id), likes = p.likes + (liked ? 1 : 0);
+  return `<div class="comm">
+    <button class="cback" id="postBack">← 커뮤니티</button>
+    <article class="cdetail">
+      <div class="cdetail-hero"><span>${p.thumb}</span></div>
+      <h1>${esc(p.title)}</h1>
+      <div class="cdetail-meta"><span class="cpost-av">${p.authorNick[0].toUpperCase()}</span>${esc(p.authorNick)} · ${c ? c.flag + c.ko : ""}${rg ? " · " + rg.ko : ""}</div>
+      <p class="cdetail-body">${esc(p.body)}</p>
+      <div class="cdetail-actions"><button class="like-btn ${liked ? "on" : ""}" data-like="${p.id}">❤️ ${likes}</button>
+        ${pl ? `<button class="post-place" data-place="${p.place}">📍 ${esc(pl.name)} 보기 →</button>` : ""}</div>
+    </article></div>`;
+}
+function bindCommunity() {
+  document.querySelectorAll("[data-cfilter]").forEach(b => b.addEventListener("click", () => { state.commFilter = b.dataset.cfilter; render(); }));
+  document.querySelectorAll(".cpost[data-post]").forEach(b => b.addEventListener("click", e => { if (e.target.closest("[data-like]")) return; state.selectedPost = b.dataset.post; render(); }));
+  const back = document.getElementById("postBack"); if (back) back.addEventListener("click", () => { state.selectedPost = null; render(); });
+  document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
+  document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; state.selectedPost = null; render(); }));
+  const np = document.getElementById("newPost"); if (np) np.addEventListener("click", () => { if (state.loggedIn) state.modal = "post"; else { state.pendingModal = "post"; state.modal = "login"; } render(); });
+}
 function render() {
   document.documentElement.dataset.theme = state.theme;
   document.getElementById("app").innerHTML = TopNav() +
     (state.app === "ambassadors"
       ? AmbassadorApp()
+      : state.app === "community"
+      ? CommunityApp()
       : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
     + Modal();
   bindTop(); bindModal();
   if (state.app === "ambassadors") bindAmbassador();
+  else if (state.app === "community") bindCommunity();
   else { bindControls(); renderResults(); }
 }
 function renderResults() {
@@ -606,14 +653,15 @@ function bindResults() {
   }));
 }
 
-// 딥링크 / 스크린샷용 초기 화면: ?app=ambassadors · ?place=p1 · ?cat=cosmetics · ?race=black
+// 딥링크 / 스크린샷용 초기 화면: ?app=community|ambassadors · ?place=p1 · ?post=po3 · ?cat=cosmetics · ?race=black
 (function () {
   try {
     const q = new URLSearchParams(location.search);
-    if (q.get("app") === "ambassadors") state.app = "ambassadors";
+    if (q.get("app") === "ambassadors" || q.get("app") === "community") state.app = q.get("app");
     if (q.get("cat") && catOf(q.get("cat"))) state.category = q.get("cat");
     if (q.get("race")) { state.profileRace = q.get("race"); state.raceFilter = q.get("race"); }
     if (q.get("place") && byId(D.places, q.get("place"))) state.selectedPlace = q.get("place");
+    if (q.get("post") && byId(D.posts, q.get("post"))) { state.app = "community"; state.selectedPost = q.get("post"); }
   } catch (e) { }
 })();
 render();

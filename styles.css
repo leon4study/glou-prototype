@@ -350,3 +350,35 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .rpin.big { width: 42px; height: 42px; font-size: 17px; background: var(--brand); }
 .rank-back { border: none; background: none; color: var(--brand); cursor: pointer; font-size: 12px; font-weight: 600; margin-left: 6px; }
 @media (max-width: 640px) { .rk-stats { display: none; } }
+
+/* ===== 커뮤니티 (오늘의집형 콘텐츠 피드) ===== */
+.comm { padding: 14px 14px 88px; position: relative; }
+.comm-head h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.comm-head p { color: var(--sub); font-size: 13px; margin-top: 3px; }
+.comm-filters { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; scrollbar-width: none; }
+.comm-filters::-webkit-scrollbar { display: none; }
+.cchip { flex: 0 0 auto; border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 999px; padding: 7px 15px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cchip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.comm-grid { column-count: 2; column-gap: 10px; margin-top: 10px; }
+.cpost { break-inside: avoid; margin-bottom: 10px; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow); transition: transform .12s ease; }
+.cpost:active { transform: scale(.98); }
+.cpost-thumb { aspect-ratio: 1/1; display: grid; place-items: center; font-size: 46px; }
+.cpost:nth-child(6n+1) .cpost-thumb { background: linear-gradient(135deg,#eef2ff,#f7f9ff); }
+.cpost:nth-child(6n+2) .cpost-thumb { background: linear-gradient(135deg,#e7f7f1,#f3fbf8); }
+.cpost:nth-child(6n+3) .cpost-thumb { background: linear-gradient(135deg,#fff1e6,#fff8f2); }
+.cpost:nth-child(6n+4) .cpost-thumb { background: linear-gradient(135deg,#fdeaf1,#fef5f9); }
+.cpost:nth-child(6n+5) .cpost-thumb { background: linear-gradient(135deg,#eafbff,#f4fdff); }
+.cpost:nth-child(6n) .cpost-thumb { background: linear-gradient(135deg,#f0eefe,#f8f6ff); }
+.cpost-b { padding: 9px 11px 11px; }
+.cpost-title { font-size: 13.5px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; color: var(--ink); }
+.cpost-meta { display: flex; align-items: center; gap: 5px; color: var(--sub); font-size: 11.5px; margin-top: 7px; }
+.cpost-av { width: 18px; height: 18px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: inline-grid; place-items: center; font-size: 10px; font-weight: 800; flex: 0 0 auto; }
+.cpost-like { margin-top: 9px; border: none; background: none; color: var(--sub); font-size: 12px; cursor: pointer; padding: 0; }
+.cpost-like.on { color: #ff5a5f; font-weight: 700; }
+.fab { position: fixed; right: 16px; bottom: 22px; width: 54px; height: 54px; border-radius: 50%; background: var(--brand); color: #fff; border: none; font-size: 22px; box-shadow: 0 8px 20px rgba(47,128,237,.42); cursor: pointer; z-index: 50; }
+.cback { background: none; border: none; color: var(--sub); font-size: 14px; font-weight: 600; padding: 4px 0 12px; cursor: pointer; }
+.cdetail-hero { aspect-ratio: 4/3; display: grid; place-items: center; font-size: 84px; background: linear-gradient(135deg,#eef2ff,#f7f9ff); border-radius: 16px; }
+.cdetail h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 16px 0 9px; line-height: 1.3; }
+.cdetail-meta { display: flex; align-items: center; gap: 6px; color: var(--sub); font-size: 13px; }
+.cdetail-body { margin: 16px 0; line-height: 1.65; color: var(--ink); font-size: 14.5px; }
+.cdetail-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }

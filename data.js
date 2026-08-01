@@ -120,14 +120,18 @@ const GLOU_DATA = {
     { id: "ac2", ambassador: "a2", place: "p6", type: "video", title: "몽골인이 간 전주 한옥마을 (Mongolian in Jeonju)", url: "#" },
     { id: "ac3", ambassador: "a1", place: "p9", type: "video", title: "Where Koreans REALLY eat samgyeopsal 🥩", url: "#" }
   ],
-  // 인플루언서 콘텐츠(게시물) — 지역별 앰배서더 랭킹의 근거
+  // 인플루언서 콘텐츠(게시물) — 커뮤니티 피드 + 지역별 앰배서더 랭킹의 근거
   posts: [
-    { id: "po1", authorNick: "Jake", country: "us", region: "seoul_mapo", place: "p3", title: "Real Korean BBQ in Yeonnam", body: "Where locals actually go for samgyeopsal — not the tourist spots.", thumb: "🍖", likes: 230 },
-    { id: "po2", authorNick: "Bat", country: "mn", region: "jeonju", place: "p6", title: "몽골인이 간 전주 한옥마을", body: "Hanbok + hanok stay, barely any tourists. Loved it.", thumb: "🏯", likes: 180 },
-    { id: "po3", authorNick: "Yuki", country: "jp", region: "seoul_seongsu", place: "p8", title: "성수 감성 카페 투어", body: "5 aesthetic cafes in Seongsu, ranked.", thumb: "☕", likes: 410 },
-    { id: "po4", authorNick: "Chloé", country: "fr", region: "busan", place: "p13", title: "Busan hidden gems", body: "Gamcheon culture village + local seafood.", thumb: "🎨", likes: 150 },
-    { id: "po5", authorNick: "Jake", country: "us", region: "seoul_mapo", place: "p7", title: "English escape rooms in Hongdae", body: "Fun for foreigners — English version available.", thumb: "🔐", likes: 90 },
-    { id: "po6", authorNick: "Minh", country: "vn", region: "seoul_gn", place: null, title: "Gangnam on a budget", body: "Cheap eats near Gangnam station for students.", thumb: "🍜", likes: 60 }
+    { id: "po1", authorNick: "Jake", country: "us", region: "seoul_mapo", place: "p3", tag: "food", title: "Real Korean BBQ in Yeonnam", body: "Where locals actually go for samgyeopsal — not the tourist spots.", thumb: "🍖", likes: 230 },
+    { id: "po2", authorNick: "Bat", country: "mn", region: "jeonju", place: "p6", tag: "travel", title: "몽골인이 간 전주 한옥마을", body: "Hanbok + hanok stay, barely any tourists. Loved it.", thumb: "🏯", likes: 180 },
+    { id: "po3", authorNick: "Yuki", country: "jp", region: "seoul_seongsu", place: "p8", tag: "cafe", title: "성수 감성 카페 투어", body: "5 aesthetic cafes in Seongsu, ranked.", thumb: "☕", likes: 410 },
+    { id: "po4", authorNick: "Chloé", country: "fr", region: "busan", place: "p13", tag: "travel", title: "Busan hidden gems", body: "Gamcheon culture village + local seafood.", thumb: "🎨", likes: 150 },
+    { id: "po5", authorNick: "Jake", country: "us", region: "seoul_mapo", place: "p7", tag: "travel", title: "English escape rooms in Hongdae", body: "Fun for foreigners — English version available.", thumb: "🔐", likes: 90 },
+    { id: "po6", authorNick: "Minh", country: "vn", region: "seoul_gn", place: null, tag: "food", title: "Gangnam on a budget", body: "Cheap eats near Gangnam station for students.", thumb: "🍜", likes: 60 },
+    { id: "po7", authorNick: "Yuki", country: "jp", region: "seoul_seongsu", place: null, tag: "beauty", title: "일본인 피부에 맞는 쿠션 3", body: "K-beauty cushions that actually match Japanese skin tones.", thumb: "💄", likes: 320 },
+    { id: "po8", authorNick: "Chloé", country: "fr", region: "seoul_gn", place: null, tag: "beauty", title: "Winter skincare haul", body: "Olive Young picks for dry skin in Seoul.", thumb: "🧴", likes: 140 },
+    { id: "po9", authorNick: "Bat", country: "mn", region: "jeonju", place: null, tag: "cafe", title: "전주 로컬 디저트 카페", body: "Quiet cafes + the best choco pie in town.", thumb: "🍰", likes: 75 },
+    { id: "po10", authorNick: "Minh", country: "vn", region: "seoul_mapo", place: "p3", tag: "food", title: "Halal-friendly eats near Hongdae", body: "Where I actually eat as a Muslim student.", thumb: "🥘", likes: 210 }
   ]
 };
 if (typeof module !== "undefined") { module.exports = GLOU_DATA; }
