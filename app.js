@@ -32,7 +32,7 @@ const state = {
   loggedIn: false, nick: "", modal: null, pendingModal: null,
   compose: null, pendingCompose: false,
   myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false, pgDetail: null,
-  applyPlace: null, applied: new Set()
+  applyPlace: null, applied: new Set(), reviewDetail: null
 };
 
 function setProfile(country) {
@@ -284,7 +284,7 @@ function Detail(p) {
     const c = byId(D.countries, r.country), race = byId(D.races, r.race);
     const vc = state.votes[r.id] || 0;
     const t = state.translated.has(r.id);
-    return `<div class="review"><div class="avatar">${(r.nick[0] || "?").toUpperCase()}</div>
+    return `<div class="review" data-review="${r.id}"><div class="avatar">${(r.nick[0] || "?").toUpperCase()}</div>
         <div class="rv-main"><div class="rv-top"><b>${esc(r.nick)}</b> <span class="rv-tag">${c ? c.flag + c.ko : r.country} · ${race ? race.ko : ""}</span>
           <span class="rv-star">${stars(r.rating)}</span></div><p class="rv-body">${esc(r.body)}</p>${r.tags && r.tags.length ? `<div class="rv-tags">${r.tags.map(t => `<span class="rv-tag-chip">#${esc(t)}</span>`).join("")}</div>` : ""}
           ${r.photo ? `<img class="rv-photo" src="${r.photo}" alt="review photo">` : ""}
@@ -366,6 +366,29 @@ function PgDetailOverlay() {
     }
   }
   return `<div class="composer pg-detail-ov"><header class="cz-bar"><button class="cz-cancel" id="pgBack">← 뒤로</button><span class="cz-title">게시물</span><span style="width:40px"></span></header><div class="cz-body">${inner}</div></div>`;
+}
+function ReviewDetailOverlay() {
+  const r = byId(D.reviews, state.reviewDetail);
+  if (!r) { state.reviewDetail = null; return ""; }
+  const p = byId(D.places, r.place), c = byId(D.countries, r.country), race = byId(D.races, r.race), t = state.translated.has(r.id);
+  return `<div class="composer rvdet-ov"><header class="cz-bar"><button class="cz-cancel" id="rvBack">← 뒤로</button><span class="cz-title">후기</span><span style="width:40px"></span></header>
+    <div class="cz-body">
+      ${p ? `<button class="rvdet-place" data-place="${r.place}">${p.emoji} <b>${esc(p.name)}</b> 보기 →</button>` : ""}
+      <div class="rvdet-head"><div class="prof-avatar" style="width:52px;height:52px;font-size:22px">${(r.nick[0] || "?").toUpperCase()}</div>
+        <div><div class="rvdet-nick">${esc(r.nick)}</div><div class="rvdet-meta">${c ? c.flag + c.ko : r.country} · ${race ? race.ko : ""}</div>
+          <div class="rv-star" style="font-size:16px">${stars(r.rating)}</div></div></div>
+      <p class="cdetail-body">${esc(r.body)}</p>
+      ${r.tags && r.tags.length ? `<div class="rv-tags">${r.tags.map(x => `<span class="rv-tag-chip">#${esc(x)}</span>`).join("")}</div>` : ""}
+      ${r.photo ? `<img class="rvdet-photo" src="${r.photo}" alt="">` : ""}
+      ${r.trans ? `${t ? `<p class="trans">↳ ${esc(r.trans)}</p>` : ""}<button class="trans-btn" data-trans="${r.id}">${t ? "원문 보기" : "🌐 번역 보기"}</button>` : ""}
+      <div class="cdetail-actions" style="margin-top:14px"><button class="vote ${state.voted.has(r.id) ? "on" : ""}" data-vote="${r.id}">👍 유용해요 ${state.votes[r.id] || ""}</button></div>
+    </div></div>`;
+}
+function bindReviewDetail() {
+  const back = document.getElementById("rvBack"); if (back) back.addEventListener("click", () => { state.reviewDetail = null; render(); });
+  document.querySelectorAll(".rvdet-ov [data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; state.reviewDetail = null; render(); }));
+  document.querySelectorAll(".rvdet-ov [data-trans]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.trans; state.translated.has(id) ? state.translated.delete(id) : state.translated.add(id); render(); }));
+  document.querySelectorAll(".rvdet-ov [data-vote]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.vote; if (!state.voted.has(id)) { state.voted.add(id); state.votes[id] = (state.votes[id] || 0) + 1; } render(); }));
 }
 function bindPgDetail() {
   const back = document.getElementById("pgBack"); if (back) back.addEventListener("click", () => { state.pgDetail = null; render(); });
@@ -769,11 +792,12 @@ function render() {
       : (state.page === "mypage" || state.page === "settings")
       ? `<div id="results"></div>`
       : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
-    + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "") + (state.pgDetail ? PgDetailOverlay() : "");
+    + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "") + (state.pgDetail ? PgDetailOverlay() : "") + (state.reviewDetail ? ReviewDetailOverlay() : "");
   bindTop(); bindModal();
   if (state.compose) bindComposer();
   if (state.profileNick) bindProfile();
   if (state.pgDetail) bindPgDetail();
+  if (state.reviewDetail) bindReviewDetail();
   if (state.app === "ambassadors") bindAmbassador();
   else if (state.app === "community") bindCommunity();
   else if (state.app === "shorts") bindShorts();
@@ -884,6 +908,7 @@ function bindResults() {
   on("reviewSort", "change", e => { state.reviewSort = e.target.value; renderResults(); });
   on("writeReview", "click", () => { if (state.loggedIn) state.compose = { rating: 5, tags: [], body: "", photo: null }; else { state.pendingCompose = true; state.modal = "login"; } render(); });
   document.querySelectorAll("[data-apply]").forEach(b => b.addEventListener("click", () => { state.applyPlace = b.dataset.apply; state.modal = "apply"; render(); }));
+  document.querySelectorAll(".review[data-review]").forEach(el => el.addEventListener("click", e => { if (e.target.closest("button")) return; state.reviewDetail = el.dataset.review; render(); }));
   document.querySelectorAll("[data-chip]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.chip; state.quick[k] = !state.quick[k]; renderResults(); }));
   document.querySelectorAll("[data-savedonly]").forEach(b => b.addEventListener("click", () => { state.savedOnly = !state.savedOnly; renderResults(); }));
   document.querySelectorAll("[data-trans]").forEach(b => b.addEventListener("click", () => {
@@ -919,6 +944,7 @@ function bindResults() {
     if (q.get("mypage")) { state.loggedIn = true; state.nick = state.nick || "You"; state.app = "reviews"; state.page = "mypage"; if (q.get("mypage") === "empty") state.demoEmpty = true; }
     if (q.get("settings")) { state.loggedIn = true; state.nick = state.nick || "You"; state.app = "reviews"; state.page = "settings"; }
     if (q.get("profile")) state.profileNick = q.get("profile");
+    if (q.get("review") && byId(D.reviews, q.get("review"))) state.reviewDetail = q.get("review");
   } catch (e) { }
 })();
 render();

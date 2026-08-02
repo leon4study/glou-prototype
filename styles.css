@@ -547,3 +547,12 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .ev-meta { color: var(--sub); font-size: 12.5px; margin-top: 3px; }
 .ev-apply { flex: 0 0 auto; background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 9px 15px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .ev-done { flex: 0 0 auto; color: var(--good); font-weight: 700; font-size: 13px; }
+
+/* ===== 후기 콘텐츠 상세 오버레이 ===== */
+.rvdet-ov { z-index: 215; }
+.rvdet-place { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--brand); border: none; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 16px; }
+.rvdet-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.rvdet-nick { font-weight: 800; font-size: 16px; }
+.rvdet-meta { color: var(--sub); font-size: 13px; margin: 3px 0 5px; }
+.rvdet-photo { max-width: 100%; border-radius: 12px; margin: 14px 0; display: block; }
+.review[data-review] { cursor: pointer; }
