@@ -105,7 +105,7 @@ function TopNav() {
       ${state.app === "shorts" ? "" : `<div class="tn-brand" id="navHome" title="홈으로">GL<span>OU</span></div>`}
       <div class="tn-tabs">${tabs.map(([id, l]) => `<button class="tn-tab ${state.app === id ? "on" : ""}" data-app="${id}">${l}</button>`).join("")}</div>
       <div class="theme-sw" title="디자인 프리셋">${sw}</div>
-      ${state.app === "shorts" ? "" : `<button id="loginBtn" class="login-btn">${state.loggedIn ? "👤 " + esc(state.nick) : "🔑 로그인"}</button>`}
+      ${state.app === "shorts" ? "" : `<button id="loginBtn" class="login-btn ${state.loggedIn ? "is-user" : ""}">${state.loggedIn ? "👤 " + esc(state.nick) : "🔑 로그인"}</button>`}
     </nav>`;
 }
 function Header() {
@@ -523,7 +523,7 @@ function bindModal() {
   on("loginCancel", "click", () => { state.modal = null; render(); });
   on("applyCancel", "click", () => { state.modal = null; render(); });
   on("applySubmit", "click", () => { if (state.applyPlace) state.applied.add(state.applyPlace); state.modal = null; render(); });
-  on("logout", "click", () => { state.loggedIn = false; state.nick = ""; state.modal = null; render(); });
+  on("logout", "click", () => { state.loggedIn = false; state.nick = ""; state.modal = null; state.page = null; state.app = "reviews"; state.selectedPlace = null; render(); });
   on("loginSubmit", "click", () => {
     const nick = (document.getElementById("li-nick").value || "").trim() || "You";
     const country = document.getElementById("li-country").value, c = byId(D.countries, country);
@@ -898,7 +898,7 @@ function bindResults() {
   on("back", "click", () => { state.selectedPlace = null; state.showAll = false; render(); });
   on("backHome", "click", goHome);
   on("editProfile", "click", () => { state.modal = "login"; render(); });
-  on("logout2", "click", () => { state.loggedIn = false; state.nick = ""; render(); });
+  on("logout2", "click", () => { state.loggedIn = false; state.nick = ""; state.page = null; state.app = "reviews"; state.selectedPlace = null; render(); });
   document.querySelectorAll("[data-mytab]").forEach(b => b.addEventListener("click", () => { state.myTab = b.dataset.mytab; render(); }));
   document.querySelectorAll(".mp-tabbody [data-pg]").forEach(b => b.addEventListener("click", () => openPgItem(b.dataset.pg)));
   on("openSettings", "click", () => { state.page = "settings"; render(); });
@@ -955,3 +955,4 @@ function bindResults() {
   } catch (e) { }
 })();
 render();
+

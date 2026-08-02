@@ -437,7 +437,7 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 @media (max-width: 767px) {
   .tn-tabs { display: none; }
   .theme-sw { display: none; }
-  .topnav .login-btn { display: none; }
+  .topnav .login-btn { display: none; } /* 모바일: 상단 로그인/프로필 숨김 — 로그인·프로필은 하단 '마이' 탭에서 */
   #app { padding-bottom: 78px; }
   .bottomnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); z-index: 40; padding: 7px 0 calc(7px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -2px 12px rgba(0,0,0,.05); }
   .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: var(--sub); font-size: 10.5px; cursor: pointer; padding: 3px 0; letter-spacing: 0; }
@@ -556,3 +556,5 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .rvdet-meta { color: var(--sub); font-size: 13px; margin: 3px 0 5px; }
 .rvdet-photo { max-width: 100%; border-radius: 12px; margin: 14px 0; display: block; }
 .review[data-review] { cursor: pointer; }
+
+
