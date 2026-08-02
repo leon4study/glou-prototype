@@ -530,3 +530,20 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 .pg-short-cover { aspect-ratio: 3/4; display: grid; place-items: center; font-size: 96px; background: linear-gradient(160deg, #3a2b4d, #6b4a7a); border-radius: 16px; color: #fff; }
 .pg-short-info { margin-top: 16px; }
 .pg-short-info p { margin-top: 8px; line-height: 1.6; }
+
+/* ===== 이용정보 요약 · 이벤트 카드 ===== */
+.finfo-sum { margin: 16px 0; }
+.finfo-sum h3 { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+.finfo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.finfo-cell { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.finfo-cell.on { border-color: var(--brand); background: var(--brand-soft); }
+.finfo-cell .fk { color: var(--sub); }
+.finfo-cell .fv { font-weight: 700; }
+.finfo-cell.on .fv { color: var(--brand); }
+.event-card { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--brand); background: var(--brand-soft); border-radius: 14px; padding: 12px 14px; margin: 16px 0; }
+.ev-tag { flex: 0 0 auto; background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 700; }
+.ev-body { flex: 1; min-width: 0; }
+.ev-title { font-weight: 800; font-size: 14.5px; }
+.ev-meta { color: var(--sub); font-size: 12.5px; margin-top: 3px; }
+.ev-apply { flex: 0 0 auto; background: var(--brand); color: #fff; border: none; border-radius: 999px; padding: 9px 15px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ev-done { flex: 0 0 auto; color: var(--good); font-weight: 700; font-size: 13px; }

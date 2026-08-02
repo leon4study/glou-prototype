@@ -31,7 +31,8 @@ const state = {
   selectedPlace: null, page: null, theme: "ohou",
   loggedIn: false, nick: "", modal: null, pendingModal: null,
   compose: null, pendingCompose: false,
-  myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false, pgDetail: null
+  myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false, pgDetail: null,
+  applyPlace: null, applied: new Set()
 };
 
 function setProfile(country) {
@@ -198,6 +199,27 @@ function BizInfo(p) {
       ${menu ? `<div class="biz-row menu">📋 <b>대표 메뉴</b><ul>${menu}</ul></div>` : ""}
       <div class="biz-row">${ExtRatings(p)}</div></div>`;
 }
+function ForeignerInfo(p) {
+  const t = p.tags || {};
+  const rows = [
+    ["🌐 영어", t.english ? "가능" : "확인 필요", t.english],
+    ["📵 전화번호", t.noPhone ? "없이 이용 가능" : "예약 시 필요", t.noPhone],
+    ["🧍 혼자 방문", t.solo ? "편함" : "일반적", t.solo],
+    ["💳 가격대", p.price || "—", true],
+    ["🇰🇷 현지인 추천", p.localFav ? "예" : "—", p.localFav]
+  ];
+  return `<div class="finfo-sum"><h3>ℹ️ 외국인 이용정보 요약</h3>
+    <div class="finfo-grid">${rows.map(([k, v, on]) => `<div class="finfo-cell ${on ? "on" : ""}"><span class="fk">${k}</span><span class="fv">${v}</span></div>`).join("")}</div></div>`;
+}
+function EventCard(p) {
+  const ev = (D.events || []).find(e => e.place === p.id);
+  if (!ev) return "";
+  const done = state.applied.has(p.id);
+  return `<div class="event-card"><span class="ev-tag">🎈 ${esc(ev.tag)}</span>
+    <div class="ev-body"><div class="ev-title">${esc(ev.title)}</div>
+      <div class="ev-meta">📅 ${esc(ev.period)} · ${esc(ev.perk)}</div></div>
+    ${done ? `<span class="ev-done">✓ 신청됨</span>` : `<button class="ev-apply" data-apply="${p.id}">신청하기 →</button>`}</div>`;
+}
 function ProductInfo(p) {
   return `<aside class="mappane product-info">
     <div class="pi-row"><b>브랜드</b> ${p.brand}</div>
@@ -291,6 +313,7 @@ function Detail(p) {
           </div></div>
         ${isProduct(p) ? ProductInfo(p) : DetailMap(p)}
       </div>
+      ${!isProduct(p) ? EventCard(p) + ForeignerInfo(p) : ""}
       ${isProduct(p) ? PersonalRec(p) : BizInfo(p)}
       ${acs ? `<div class="amb-wrap"><h3>🌏 앰배서더 콘텐츠</h3>${acs}</div>` : ""}
       <div class="dist">${dist}</div>
@@ -416,6 +439,15 @@ function Settings() {
 }
 function Modal() {
   if (!state.modal) return "";
+  if (state.modal === "apply") {
+    const p = byId(D.places, state.applyPlace) || {}, ev = (D.events || []).find(e => e.place === state.applyPlace) || {};
+    return `<div class="modal-ov" id="ov"><div class="modal"><h3>이벤트 신청 <span>${esc(p.name || "")}</span></h3>
+      <p class="modal-note">🎈 ${esc(ev.title || "")} · ${esc(ev.perk || "")}</p>
+      <label>방문 희망일<input id="ap-date" type="date"></label>
+      <label>인원<select id="ap-n"><option>1명</option><option>2명</option><option>3명 이상</option></select></label>
+      <p class="modal-note">파일럿에선 구글폼으로 연결 · 여기선 데모</p>
+      <div class="modal-btns"><button id="applyCancel" class="btn-ghost">취소</button><button id="applySubmit" class="btn-primary">신청하기</button></div></div></div>`;
+  }
   if (state.modal === "login") {
     const co = D.countries.map(c => `<option value="${c.id}" ${c.id === state.profileCountry ? "selected" : ""}>${c.flag} ${c.ko}</option>`).join("");
     return `<div class="modal-ov" id="ov"><div class="modal"><h3>로그인 / 가입 <span>한국번호 없이 이메일로</span></h3>
@@ -466,6 +498,8 @@ function bindModal() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
   on("ov", "click", e => { if (e.target.id === "ov") { state.modal = null; render(); } });
   on("loginCancel", "click", () => { state.modal = null; render(); });
+  on("applyCancel", "click", () => { state.modal = null; render(); });
+  on("applySubmit", "click", () => { if (state.applyPlace) state.applied.add(state.applyPlace); state.modal = null; render(); });
   on("logout", "click", () => { state.loggedIn = false; state.nick = ""; state.modal = null; render(); });
   on("loginSubmit", "click", () => {
     const nick = (document.getElementById("li-nick").value || "").trim() || "You";
@@ -584,7 +618,8 @@ function bindAmbassador() {
   document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
   document.querySelectorAll(".rank-row[data-nick]").forEach(b => b.addEventListener("click", () => { state.profileNick = b.dataset.nick; render(); }));
-  requestAnimationFrame(initAmbMap); // 랭킹부터 즉시 그리고 지도는 다음 프레임에(전환 체감 속도↑)
+  if (_ambRaf) cancelAnimationFrame(_ambRaf);
+  _ambRaf = requestAnimationFrame(initAmbMap); // 랭킹 먼저, 지도는 다음 프레임 + 빠른 전환 시 재생성 합침
 }
 function ShortsApp() {
   const cards = D.shorts.map(s => {
@@ -759,9 +794,10 @@ function renderResults() {
         ? `<div class="split">${List()}</div>`
         : `<div class="split">${List()}${MapPane()}</div>`);
   bindResults();
-  initMaps();
+  if (_mapsRaf) cancelAnimationFrame(_mapsRaf);
+  _mapsRaf = requestAnimationFrame(initMaps); // 빠른 전환 시 리뷰 지도 재생성 합침(멈춤 방지)
 }
-let _listMap = null, _detailMap = null;
+let _listMap = null, _detailMap = null, _mapsRaf = null;
 function initMaps() {
   if (typeof L === "undefined") return;
   if (_listMap) { try { _listMap.remove(); } catch (e) {} _listMap = null; }
@@ -782,10 +818,11 @@ function initMaps() {
     tiles().addTo(m); L.marker([p.lat, p.lng], { icon: icon(p) }).addTo(m).bindTooltip(p.name).openTooltip();
   }
 }
-let _ambMap = null;
+let _ambMap = null, _ambRaf = null;
 function initAmbMap() {
   if (typeof L === "undefined") return;
   if (_ambMap) { try { _ambMap.remove(); } catch (e) {} _ambMap = null; }
+  if (state.app !== "ambassadors") return; // 이미 다른 탭이면 지도 안 만듦(빠른 전환 대비)
   const el = document.getElementById("amb-map"); if (!el) return;
   const m = L.map(el, { scrollWheelZoom: false }); _ambMap = m;
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
@@ -846,6 +883,7 @@ function bindResults() {
   on("allRv", "click", () => { state.showAll = true; renderResults(); });
   on("reviewSort", "change", e => { state.reviewSort = e.target.value; renderResults(); });
   on("writeReview", "click", () => { if (state.loggedIn) state.compose = { rating: 5, tags: [], body: "", photo: null }; else { state.pendingCompose = true; state.modal = "login"; } render(); });
+  document.querySelectorAll("[data-apply]").forEach(b => b.addEventListener("click", () => { state.applyPlace = b.dataset.apply; state.modal = "apply"; render(); }));
   document.querySelectorAll("[data-chip]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.chip; state.quick[k] = !state.quick[k]; renderResults(); }));
   document.querySelectorAll("[data-savedonly]").forEach(b => b.addEventListener("click", () => { state.savedOnly = !state.savedOnly; renderResults(); }));
   document.querySelectorAll("[data-trans]").forEach(b => b.addEventListener("click", () => {

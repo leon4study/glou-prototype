@@ -140,6 +140,12 @@ const GLOU_DATA = {
     { id: "sh2", authorNick: "Yuki", country: "jp", emoji: "☕", caption: "성수 감성 카페 투어 — 일본인이 고른 5곳", place: "p8", tags: ["p8"], likes: 2130, saves: 540, comments: 120 },
     { id: "sh3", authorNick: "Bat", country: "mn", emoji: "🏯", caption: "몽골인이 간 전주 한옥마을 — 관광객 거의 없음", place: "p6", tags: ["p6"], likes: 860, saves: 190, comments: 44 },
     { id: "sh4", authorNick: "Chloé", country: "fr", emoji: "🎨", caption: "Busan hidden gems — 감천문화마을 + 로컬 해산물", place: "p13", tags: ["p13", "p10"], likes: 1540, saves: 410, comments: 76 }
+  ],
+  // 기간행사/이벤트 (파일럿 동선 ③ 신청 연결)
+  events: [
+    { place: "p8", tag: "체험", title: "외국인 웰컴 카페 체험", period: "~8/31", perk: "영어 메뉴 + 아메리카노 1+1" },
+    { place: "p3", tag: "할인", title: "K-BBQ 파일럿 이벤트", period: "8/10~8/24", perk: "외국인 5,000원 할인 쿠폰" },
+    { place: "p5", tag: "상담", title: "외국인 피부상담 데이", period: "매주 토요일", perk: "영어 상담 + 성분 안내지" }
   ]
 };
 if (typeof module !== "undefined") { module.exports = GLOU_DATA; }
