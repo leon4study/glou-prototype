@@ -778,10 +778,16 @@ function bindComposer() {
     state.compose = null; render();
   });
 }
-function render() {
+let _renderScheduled = false;
+function render() { // 배치(coalesce): 한 틱에 여러 번 호출돼도 실제 렌더는 다음 프레임에 딱 1회
+  if (_renderScheduled) return;
+  _renderScheduled = true;
+  requestAnimationFrame(() => { _renderScheduled = false; renderNow(); });
+}
+function renderNow() {
   const _t0 = window.GLOU_DEBUG ? performance.now() : 0;
   document.documentElement.dataset.theme = state.theme;
-  document.documentElement.dataset.app = state.app;
+  document.documentElement.dataset.view = state.app; // data-app 아님! (탭 버튼 [data-app] 셀렉터와 충돌 방지)
   document.getElementById("app").innerHTML = TopNav() +
     (state.app === "ambassadors"
       ? AmbassadorApp()

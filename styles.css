@@ -521,8 +521,8 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 
 /* ===== 쇼츠 모바일 몰입: 상단바 숨김 ===== */
 @media (max-width: 767px) {
-  :root[data-app="shorts"] .topnav { display: none; }
-  :root[data-app="shorts"] .shorts-feed { height: calc(100vh - 62px); margin-top: -14px; }
+  :root[data-view="shorts"] .topnav { display: none; }
+  :root[data-view="shorts"] .shorts-feed { height: calc(100vh - 62px); margin-top: -14px; }
 }
 
 /* 프로필 격자 → 게시물 상세 오버레이 */
