@@ -826,6 +826,7 @@ function initMaps() {
   if (typeof L === "undefined") return;
   if (_listMap) { try { _listMap.remove(); } catch (e) {} _listMap = null; }
   if (_detailMap) { try { _detailMap.remove(); } catch (e) {} _detailMap = null; }
+  if (state.modal) return; // 모달(로그인·신청 등) 열려있으면 지도 안 그림 → 입력 포커스·리프레시 방지
   const tiles = () => L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
   const icon = p => L.divIcon({ html: `<div class="lpin">${p.emoji}</div>`, className: "", iconSize: [30, 30], iconAnchor: [15, 30] });
   const listEl = document.getElementById("map");
@@ -846,7 +847,7 @@ let _ambMap = null, _ambRaf = null;
 function initAmbMap() {
   if (typeof L === "undefined") return;
   if (_ambMap) { try { _ambMap.remove(); } catch (e) {} _ambMap = null; }
-  if (state.app !== "ambassadors") return; // 이미 다른 탭이면 지도 안 만듦(빠른 전환 대비)
+  if (state.modal || state.app !== "ambassadors") return; // 모달 열려있으면 지도 재생성 안 함(포커스·리프레시 방지) · 다른 탭이면 스킵
   const el = document.getElementById("amb-map"); if (!el) return;
   const m = L.map(el, { scrollWheelZoom: false }); _ambMap = m;
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
