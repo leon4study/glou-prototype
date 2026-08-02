@@ -145,7 +145,8 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
 
 /* mobile */
 @media (max-width: 800px) {
-  .split { flex-direction: column; }
+  .split { flex-direction: column; align-items: stretch; }
+  .list { width: 100%; }
   .mappane { flex: none; width: 100%; position: static; }
   .hero-thumb { flex-basis: 72px; height: 72px; font-size: 34px; }
   .detail-cols { flex-direction: column; }
@@ -523,3 +524,9 @@ body { font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun 
   :root[data-app="shorts"] .topnav { display: none; }
   :root[data-app="shorts"] .shorts-feed { height: calc(100vh - 62px); margin-top: -14px; }
 }
+
+/* 프로필 격자 → 게시물 상세 오버레이 */
+.pg-detail-ov { z-index: 210; }
+.pg-short-cover { aspect-ratio: 3/4; display: grid; place-items: center; font-size: 96px; background: linear-gradient(160deg, #3a2b4d, #6b4a7a); border-radius: 16px; color: #fff; }
+.pg-short-info { margin-top: 16px; }
+.pg-short-info p { margin-top: 8px; line-height: 1.6; }

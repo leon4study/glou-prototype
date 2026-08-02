@@ -31,7 +31,7 @@ const state = {
   selectedPlace: null, page: null, theme: "ohou",
   loggedIn: false, nick: "", modal: null, pendingModal: null,
   compose: null, pendingCompose: false,
-  myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false
+  myTab: "posts", profileNick: null, ambInit: false, demoEmpty: false, pgDetail: null
 };
 
 function setProfile(country) {
@@ -314,11 +314,40 @@ function myContentGrid(nick) {
   return `<div class="pg-grid">${items.map(it => `<button class="pg-cell" data-pg="${it.t}:${it.id}"><span class="pg-emoji">${it.e}</span>${it.t === "short" ? `<span class="pg-badge">🎬</span>` : ""}<span class="pg-likes">❤️ ${it.likes.toLocaleString()}</span></button>`).join("")}</div>`;
 }
 function openPgItem(pg) {
-  const idx = pg.indexOf(":"), t = pg.slice(0, idx), id = pg.slice(idx + 1);
-  state.profileNick = null; state.page = null;
-  if (t === "post") { state.app = "community"; state.selectedPost = id; }
-  else { state.app = "shorts"; state.focusShort = id; }
+  state.pgDetail = pg; // 프로필/마이 격자 → 탭 이동 없이 오버레이로 크게 보기
   render();
+}
+function PgDetailOverlay() {
+  const pg = state.pgDetail, idx = pg.indexOf(":"), t = pg.slice(0, idx), id = pg.slice(idx + 1);
+  let inner = "";
+  if (t === "post") {
+    const p = byId(D.posts, id);
+    if (p) {
+      const c = byId(D.countries, p.country), rg = byId(D.regions, p.region), pl = p.place ? byId(D.places, p.place) : null;
+      const liked = state.likedPosts.has(p.id), likes = p.likes + (liked ? 1 : 0);
+      inner = `<article class="cdetail"><div class="cdetail-hero"><span>${p.thumb}</span></div>
+        <h1>${esc(p.title)}</h1>
+        <div class="cdetail-meta"><span class="cpost-av">${p.authorNick[0].toUpperCase()}</span>${esc(p.authorNick)} · ${c ? c.flag + c.ko : ""}${rg ? " · " + rg.ko : ""}</div>
+        <p class="cdetail-body">${esc(p.body)}</p>
+        <div class="cdetail-actions"><button class="like-btn ${liked ? "on" : ""}" data-like="${p.id}">❤️ ${likes}</button>
+          ${pl ? `<button class="post-place" data-place="${p.place}">📍 ${esc(pl.name)} 보기 →</button>` : ""}</div></article>`;
+    }
+  } else {
+    const s = byId(D.shorts, id);
+    if (s) {
+      const c = byId(D.countries, s.country), pl = s.place ? byId(D.places, s.place) : null;
+      inner = `<div class="pg-short-cover"><span>${s.emoji}</span></div>
+        <div class="pg-short-info"><div class="short-author"><span class="cpost-av">${s.authorNick[0].toUpperCase()}</span>${esc(s.authorNick)} · ${c ? c.flag + c.ko : ""}</div>
+        <p>${esc(s.caption)}</p>
+        <div class="cdetail-actions"><span>❤️ ${s.likes.toLocaleString()}</span><span>· 💬 ${s.comments}</span>${pl ? `<button class="post-place" data-place="${s.place}">📍 ${esc(pl.name)} 보기 →</button>` : ""}</div></div>`;
+    }
+  }
+  return `<div class="composer pg-detail-ov"><header class="cz-bar"><button class="cz-cancel" id="pgBack">← 뒤로</button><span class="cz-title">게시물</span><span style="width:40px"></span></header><div class="cz-body">${inner}</div></div>`;
+}
+function bindPgDetail() {
+  const back = document.getElementById("pgBack"); if (back) back.addEventListener("click", () => { state.pgDetail = null; render(); });
+  document.querySelectorAll(".pg-detail-ov [data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
+  document.querySelectorAll(".pg-detail-ov .post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; state.pgDetail = null; state.profileNick = null; state.page = null; render(); }));
 }
 function InfluencerProfile() {
   const nick = state.profileNick;
@@ -525,10 +554,10 @@ function AmbRank() {
   const note = prov ? `${prov.ko} — 시·구 단위 (핀 클릭 → 그 지역 랭킹)` : "도 단위 (핀 클릭 → 시·구로 확대)";
   return `<section class="rank"><div class="rank-head"><h2>🏆 앰배서더 랭킹</h2>
       <select id="ambRegion">${opts.join("")}</select></div>
-    <div class="map-note">🗺️ ${scope} · ${note} ${back}</div>
     ${myRankBanner}
-    <div id="amb-map" class="amb-map"></div>
-    <div class="rank-list">${rows || `<p class="empty">이 지역 앰배서더가 아직 없어요.</p>`}</div></section>`;
+    <div class="rank-list">${rows || `<p class="empty">이 지역 앰배서더가 아직 없어요.</p>`}</div>
+    <div class="map-note">🗺️ ${scope} · ${note} ${back}</div>
+    <div id="amb-map" class="amb-map"></div></section>`;
 }
 function AmbFeed() {
   const posts = D.posts.filter(p => state.ambRegion === "all" || p.region === state.ambRegion);
@@ -555,7 +584,7 @@ function bindAmbassador() {
   document.querySelectorAll("[data-like]").forEach(b => b.addEventListener("click", () => { const id = b.dataset.like; state.likedPosts.has(id) ? state.likedPosts.delete(id) : state.likedPosts.add(id); render(); }));
   document.querySelectorAll(".post-place[data-place]").forEach(b => b.addEventListener("click", () => { state.app = "reviews"; state.selectedPlace = b.dataset.place; render(); }));
   document.querySelectorAll(".rank-row[data-nick]").forEach(b => b.addEventListener("click", () => { state.profileNick = b.dataset.nick; render(); }));
-  initAmbMap();
+  requestAnimationFrame(initAmbMap); // 랭킹부터 즉시 그리고 지도는 다음 프레임에(전환 체감 속도↑)
 }
 function ShortsApp() {
   const cards = D.shorts.map(s => {
@@ -692,6 +721,7 @@ function bindComposer() {
   });
 }
 function render() {
+  const _t0 = window.GLOU_DEBUG ? performance.now() : 0;
   document.documentElement.dataset.theme = state.theme;
   document.documentElement.dataset.app = state.app;
   document.getElementById("app").innerHTML = TopNav() +
@@ -704,14 +734,21 @@ function render() {
       : (state.page === "mypage" || state.page === "settings")
       ? `<div id="results"></div>`
       : Header() + SearchBar() + (state.loggedIn ? "" : ProfileBar()) + CategoryPills() + `<div id="results"></div>`)
-    + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "");
+    + BottomNav() + Modal() + (state.compose ? ReviewComposer() : "") + (state.profileNick ? InfluencerProfile() : "") + (state.pgDetail ? PgDetailOverlay() : "");
   bindTop(); bindModal();
   if (state.compose) bindComposer();
   if (state.profileNick) bindProfile();
+  if (state.pgDetail) bindPgDetail();
   if (state.app === "ambassadors") bindAmbassador();
   else if (state.app === "community") bindCommunity();
   else if (state.app === "shorts") bindShorts();
   else { bindControls(); renderResults(); }
+  if (window.GLOU_DEBUG) {
+    window._rc = (window._rc || 0) + 1;
+    const maps = ["list", "detail", "amb"].filter((_, i) => [_listMap, _detailMap, _ambMap][i]);
+    const dt = performance.now() - _t0;
+    console.log(`%c[GLOU] render #${window._rc} · app=${state.app} page=${state.page || "-"} · ${dt.toFixed(1)}ms · maps=[${maps.join(",")}]`, dt > 80 ? "color:#e03131;font-weight:bold" : "color:#2f80ed");
+  }
 }
 function renderResults() {
   document.getElementById("results").innerHTML = state.selectedPlace
@@ -724,13 +761,16 @@ function renderResults() {
   bindResults();
   initMaps();
 }
+let _listMap = null, _detailMap = null;
 function initMaps() {
   if (typeof L === "undefined") return;
+  if (_listMap) { try { _listMap.remove(); } catch (e) {} _listMap = null; }
+  if (_detailMap) { try { _detailMap.remove(); } catch (e) {} _detailMap = null; }
   const tiles = () => L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
   const icon = p => L.divIcon({ html: `<div class="lpin">${p.emoji}</div>`, className: "", iconSize: [30, 30], iconAnchor: [15, 30] });
   const listEl = document.getElementById("map");
   if (listEl) {
-    const ps = placesInView(), m = L.map(listEl, { scrollWheelZoom: false });
+    const ps = placesInView(), m = L.map(listEl, { scrollWheelZoom: false }); _listMap = m;
     tiles().addTo(m); const pts = [];
     ps.forEach(p => { L.marker([p.lat, p.lng], { icon: icon(p) }).addTo(m).bindTooltip(p.name).on("click", () => { state.selectedPlace = p.id; render(); }); pts.push([p.lat, p.lng]); });
     if (state.userLoc) { L.circleMarker([state.userLoc.lat, state.userLoc.lng], { radius: 8, color: "#2b7", fillOpacity: .9 }).addTo(m).bindTooltip("내 위치"); pts.push([state.userLoc.lat, state.userLoc.lng]); }
@@ -738,14 +778,16 @@ function initMaps() {
   }
   const detEl = document.getElementById("detail-map");
   if (detEl && state.selectedPlace) {
-    const p = byId(D.places, state.selectedPlace), m = L.map(detEl, { scrollWheelZoom: false }).setView([p.lat, p.lng], 15);
+    const p = byId(D.places, state.selectedPlace), m = L.map(detEl, { scrollWheelZoom: false }).setView([p.lat, p.lng], 15); _detailMap = m;
     tiles().addTo(m); L.marker([p.lat, p.lng], { icon: icon(p) }).addTo(m).bindTooltip(p.name).openTooltip();
   }
 }
+let _ambMap = null;
 function initAmbMap() {
   if (typeof L === "undefined") return;
+  if (_ambMap) { try { _ambMap.remove(); } catch (e) {} _ambMap = null; }
   const el = document.getElementById("amb-map"); if (!el) return;
-  const m = L.map(el, { scrollWheelZoom: false });
+  const m = L.map(el, { scrollWheelZoom: false }); _ambMap = m;
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
   const pts = [], prov = provinceOf(state.ambRegion);
   if (!prov) {
@@ -826,6 +868,7 @@ function bindResults() {
 (function () {
   try {
     const q = new URLSearchParams(location.search);
+    if (q.get("debug")) { window.GLOU_DEBUG = true; console.log("%c[GLOU] 디버그 로깅 ON — 렌더/타이밍/지도 추적", "color:#12b886;font-weight:bold"); }
     if (["ambassadors", "community", "shorts"].includes(q.get("app"))) state.app = q.get("app");
     if (["ohou", "yelp", "slim"].includes(q.get("theme"))) state.theme = q.get("theme");
     if (q.get("cat") && catOf(q.get("cat"))) state.category = q.get("cat");
